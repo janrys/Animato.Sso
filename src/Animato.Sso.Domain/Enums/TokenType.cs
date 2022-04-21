@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.Domain.Enums;
+namespace Animato.Sso.Domain.Enums;
 
 public class TokenType : Enumeration
 {
@@ -10,7 +10,7 @@ public class TokenType : Enumeration
     /// <summary>
     /// Refresh token
     /// </summary>
-    public static readonly TokenType Refresh = new(1, nameof(Inherited));
+    public static readonly TokenType Refresh = new(1, nameof(Refresh));
 
     /// <summary>
     /// Id token

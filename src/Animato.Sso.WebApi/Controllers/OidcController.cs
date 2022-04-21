@@ -1,8 +1,11 @@
 namespace Animato.Sso.WebApi.Controllers;
 
 using System.Security.Claims;
+using Animato.Sso.Application.Common;
+using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.WebApi.Extensions;
 using Animato.Sso.WebApi.Models;
+using Google.Authenticator;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -18,18 +21,38 @@ public class OidcController : ApiControllerBase
     /// <summary>
     /// Authorization endpoint
     /// </summary>
+    /// <param name="authenticator"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Asset  metadata</returns>
     [HttpGet("authorize", Name = "Authorize")]
-    public async Task<ContentResult> Authorize(CancellationToken cancellationToken)
+    public async Task<IActionResult> Authorize([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
     {
         logger.LogDebug("Executing action {Action}", nameof(Authorize));
         var fileContents = await System.IO.File.ReadAllTextAsync("./Content/Authorize.html", cancellationToken);
+
+
+        if (User.Identity.IsAuthenticated)
+        {
+            var lastChanged = User.Claims.FirstOrDefault(c => c.Type == "LastChanged")?.Value;
+
+            if (!DateTime.TryParse(lastChanged, Default.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
+                || lastChangedParsed <= DateTime.UtcNow.AddMinutes(-1))
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return RedirectToRoute("Authorize");
+            }
+        }
 
         string userName;
         if (User.Identity.IsAuthenticated)
         {
             userName = User.Identity.Name;
+
+            var qrCodeInfo = authenticator.GenerateCode(userName, "secretkey");
+            var qrCodeImageUrl = qrCodeInfo.ImageUrl;
+            var manualEntrySetupCode = qrCodeInfo.ManualKey;
+            fileContents = fileContents.Replace("***manual2facode***", manualEntrySetupCode);
+            fileContents = fileContents.Replace("***qrcodeUrl***", qrCodeImageUrl);
         }
         else
         {
@@ -48,10 +71,11 @@ public class OidcController : ApiControllerBase
     /// Authorization endpoint for users
     /// </summary>
     /// <param name="loginModel"></param>
+    /// <param name="authenticator"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Asset  metadata</returns>
     [HttpPost("authorize/interactive", Name = "AuthorizeInteractive")]
-    public async Task<IActionResult> AuthorizeInteractive([FromForm] LoginModel loginModel, CancellationToken cancellationToken)
+    public async Task<IActionResult> AuthorizeInteractive([FromForm] LoginModel loginModel, [FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
     {
         logger.LogDebug("Executing action {Action}", nameof(AuthorizeInteractive));
 
@@ -60,6 +84,10 @@ public class OidcController : ApiControllerBase
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
+        else if (loginModel.Action.Equals("validateQrCode", StringComparison.OrdinalIgnoreCase))
+        {
+            var result = authenticator.ValidatePin("secretkey", loginModel.QrCode);
+        }
         else
         {
             var claims = new List<Claim>
@@ -67,6 +95,7 @@ public class OidcController : ApiControllerBase
             new Claim(ClaimTypes.Name, loginModel.UserName),
             new Claim("FullName", loginModel.UserName),
             new Claim(ClaimTypes.Role, "Administrator"),
+            new Claim("LastChanged", DateTime.UtcNow.ToString(Default.DatePattern, Default.Culture)) // last change from database
         };
 
             var claimsIdentity = new ClaimsIdentity(
@@ -85,6 +114,8 @@ public class OidcController : ApiControllerBase
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
+
+            
         }
 
         return LocalRedirect(Url.GetLocalUrl("/authorize"));

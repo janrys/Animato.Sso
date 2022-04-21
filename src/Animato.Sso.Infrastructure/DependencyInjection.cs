@@ -5,6 +5,7 @@ using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Infrastructure.Services;
 using Animato.Sso.Infrastructure.Services.Messaging;
 using Animato.Sso.Infrastructure.Services.Persistence;
+using Animato.Sso.Infrastructure.Services.Totp;
 using Animato.Sso.Infrastructure.Transformations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,11 @@ public static class DependencyInjection
         configuration.Bind(AzureBlobStorageOptions.CONFIGURATION_KEY, blobStorageOptions);
         services.AddSingleton(blobStorageOptions);
         services.AddSingleton<IFileStorageService, AzureBlobFileStorageService>();
+
+        var qrCodeAuthenticatorOptions = new GoogleQrCodeTotpAuthenticatorOptions();
+        configuration.Bind(GoogleQrCodeTotpAuthenticatorOptions.CONFIGURATION_KEY, qrCodeAuthenticatorOptions);
+        services.AddSingleton(qrCodeAuthenticatorOptions);
+        services.AddSingleton<IQrCodeTotpAuthenticator, GoogleQrCodeTotpAuthenticator>();
 
         services.AddTransformations(configuration);
 

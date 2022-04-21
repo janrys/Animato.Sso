@@ -10,8 +10,15 @@
   <form method="post" action="/authorize/interactive">
     <input name="userName" />
     <input name="password" />
-    <button type="submit" name="action" value="login" >Login</button>
-    <button type="submit" name="action" value="logout" >Logout</button>
+    <input name="qrCode" />
+    <button type="submit" name="action" value="login">Login</button>
+    <button type="submit" name="action" value="logout">Logout</button>
+    <button type="submit" name="action" value="validateQrCode">Validate QR code</button>
   </form>
+
+  <p>
+    <label>***manual2facode***</label>
+    <img src="***qrcodeUrl***" />
+  </p>
 </body>
 </html>

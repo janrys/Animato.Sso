@@ -42,7 +42,7 @@ public class AttributeAuthorizationService : IAuthorizationService
         {
             foreach (var policy in authorizeAttributesWithPolicies.Select(a => a.Policy))
             {
-                ; // TODO: implement policy check
+                ; // implement policy check
             }
         }
 

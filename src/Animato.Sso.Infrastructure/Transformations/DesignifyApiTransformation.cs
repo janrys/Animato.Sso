@@ -22,7 +22,7 @@ public class DesignifyApiTransformation : BaseTransformation, IAssetTransformati
     public override async Task<Stream> Transform(Stream asset, string parameters = null)
     {
         var parsedParameters = ParseParameters(parameters);
-        var designIdParameter = parsedParameters?.FirstOrDefault(p => p.Key.Equals("id", StringComparison.OrdinalIgnoreCase)) ?? null;
+        var designIdParameter = parsedParameters?.FirstOrDefault(p => p.Key.Equals("id", StringComparison.OrdinalIgnoreCase));
 
         if (!designIdParameter.HasValue || string.IsNullOrEmpty(designIdParameter.Value.Value))
         {

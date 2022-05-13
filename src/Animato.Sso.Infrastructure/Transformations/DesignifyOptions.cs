@@ -1,7 +1,4 @@
 namespace Animato.Sso.Infrastructure.Transformations;
-
-using System.Collections.Generic;
-
 public class DesignifyOptions
 {
     public const string CONFIGURATION_KEY = "Designify";

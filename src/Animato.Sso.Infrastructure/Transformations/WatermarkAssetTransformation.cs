@@ -2,10 +2,10 @@ namespace Animato.Sso.Infrastructure.Transformations;
 using System.IO;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.Fonts;
 
 public class WatermarkAssetTransformation : BaseTransformation, IAssetTransformation
 {
@@ -16,7 +16,7 @@ public class WatermarkAssetTransformation : BaseTransformation, IAssetTransforma
     public override async Task<Stream> Transform(Stream asset, string parameters = null)
     {
         var parsedParameters = ParseParameters(parameters);
-        var watermarkParameter = parsedParameters?.FirstOrDefault(p => p.Key.Equals("text", StringComparison.OrdinalIgnoreCase)) ?? null;
+        var watermarkParameter = parsedParameters?.FirstOrDefault(p => p.Key.Equals("text", StringComparison.OrdinalIgnoreCase));
 
         if (!watermarkParameter.HasValue || string.IsNullOrEmpty(watermarkParameter.Value.Value))
         {
@@ -59,19 +59,18 @@ public class WatermarkAssetTransformation : BaseTransformation, IAssetTransforma
         Color color,
         float padding)
     {
-        Size imgSize = processingContext.GetCurrentSize();
+        var imgSize = processingContext.GetCurrentSize();
 
-        float targetWidth = imgSize.Width - (padding * 2);
-        float targetHeight = imgSize.Height - (padding * 2);
+        var targetWidth = imgSize.Width - (padding * 2);
 
         // measure the text size
-        FontRectangle size = TextMeasurer.Measure(text, new TextOptions(font));
+        var size = TextMeasurer.Measure(text, new TextOptions(font));
 
         //find out how much we need to scale the text to fill the space (up or down)
-        float scalingFactor = Math.Min(imgSize.Width / size.Width, imgSize.Height / size.Height);
+        var scalingFactor = Math.Min(imgSize.Width / size.Width, imgSize.Height / size.Height);
 
         //create a new font
-        Font scaledFont = new Font(font, scalingFactor * font.Size);
+        var scaledFont = new Font(font, scalingFactor * font.Size);
 
         var center = new PointF(imgSize.Width / 2, imgSize.Height / 2);
 
@@ -92,26 +91,26 @@ public class WatermarkAssetTransformation : BaseTransformation, IAssetTransforma
         Color color,
         float padding)
     {
-        Size imgSize = processingContext.GetCurrentSize();
-        float targetWidth = imgSize.Width - (padding * 2);
-        float targetHeight = imgSize.Height - (padding * 2);
+        var imgSize = processingContext.GetCurrentSize();
+        var targetWidth = imgSize.Width - (padding * 2);
+        var targetHeight = imgSize.Height - (padding * 2);
 
-        float targetMinHeight = imgSize.Height - (padding * 3); // must be with in a margin width of the target height
+        var targetMinHeight = imgSize.Height - (padding * 3); // must be with in a margin width of the target height
 
         // now we are working i 2 dimensions at once and can't just scale because it will cause the text to
         // reflow we need to just try multiple times
 
         var scaledFont = font;
-        FontRectangle s = new FontRectangle(0, 0, float.MaxValue, float.MaxValue);
+        var s = new FontRectangle(0, 0, float.MaxValue, float.MaxValue);
 
-        float scaleFactor = (scaledFont.Size / 2); // every time we change direction we half this size
-        int trapCount = (int)scaledFont.Size * 2;
+        var scaleFactor = scaledFont.Size / 2; // every time we change direction we half this size
+        var trapCount = (int)scaledFont.Size * 2;
         if (trapCount < 10)
         {
             trapCount = 10;
         }
 
-        bool isTooSmall = false;
+        var isTooSmall = false;
 
         while ((s.Height > targetHeight || s.Height < targetMinHeight) && trapCount > 0)
         {
@@ -119,7 +118,7 @@ public class WatermarkAssetTransformation : BaseTransformation, IAssetTransforma
             {
                 if (isTooSmall)
                 {
-                    scaleFactor = scaleFactor / 2;
+                    scaleFactor /= 2;
                 }
 
                 scaledFont = new Font(scaledFont, scaledFont.Size - scaleFactor);
@@ -130,7 +129,7 @@ public class WatermarkAssetTransformation : BaseTransformation, IAssetTransforma
             {
                 if (!isTooSmall)
                 {
-                    scaleFactor = scaleFactor / 2;
+                    scaleFactor /= 2;
                 }
                 scaledFont = new Font(scaledFont, scaledFont.Size + scaleFactor);
                 isTooSmall = true;

@@ -2,14 +2,11 @@ namespace Animato.Sso.Infrastructure.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Exceptions;
-using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
-using Azure;
 using Azure.Data.Tables;
 using Microsoft.Extensions.Logging;
 
@@ -51,8 +48,6 @@ public class AzureTableMetadataStorageService : IMetadataStorageService, ITransf
             logger.LogError(exception, "Error deleting asset");
             throw new DataAccessException("Error deleting asset", exception);
         }
-
-        return;
     }
 
     public async Task<AssetMetadata> GetAsset(Guid id, CancellationToken cancellationToken)
@@ -270,7 +265,5 @@ public class AzureTableMetadataStorageService : IMetadataStorageService, ITransf
             logger.LogError(exception, "Error deleting transformation");
             throw new DataAccessException("Error deleting transformation", exception);
         }
-
-        return;
     }
 }

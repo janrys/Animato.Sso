@@ -5,7 +5,6 @@ using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.WebApi.Extensions;
 using Animato.Sso.WebApi.Models;
-using Google.Authenticator;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -35,7 +34,7 @@ public class OidcController : ApiControllerBase
         {
             var lastChanged = User.Claims.FirstOrDefault(c => c.Type == "LastChanged")?.Value;
 
-            if (!DateTime.TryParse(lastChanged, Default.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
+            if (!DateTime.TryParse(lastChanged, DefaultOptions.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
                 || lastChangedParsed <= DateTime.UtcNow.AddMinutes(-1))
             {
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -95,7 +94,7 @@ public class OidcController : ApiControllerBase
             new Claim(ClaimTypes.Name, loginModel.UserName),
             new Claim("FullName", loginModel.UserName),
             new Claim(ClaimTypes.Role, "Administrator"),
-            new Claim("LastChanged", DateTime.UtcNow.ToString(Default.DatePattern, Default.Culture)) // last change from database
+            new Claim("LastChanged", DateTime.UtcNow.ToString(DefaultOptions.DatePattern, DefaultOptions.Culture)) // last change from database
         };
 
             var claimsIdentity = new ClaimsIdentity(
@@ -115,7 +114,7 @@ public class OidcController : ApiControllerBase
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
 
-            
+
         }
 
         return LocalRedirect(Url.GetLocalUrl("/authorize"));

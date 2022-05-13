@@ -1,7 +1,4 @@
 namespace Animato.Sso.WebApi.Controllers;
-
-using Animato.Sso.Application.Common.Interfaces;
-using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
 using Animato.Sso.WebApi.Extensions;
 using MediatR;

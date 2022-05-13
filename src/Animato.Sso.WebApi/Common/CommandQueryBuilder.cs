@@ -67,10 +67,10 @@ public class CommandQueryBuilder : ICommandBuilder, IAssetCommandBuilder, ITrans
 
     Task<IEnumerable<AssetMetadata>> IAssetQueryBuilder.GetAll() => mediator.Send(new GetAssetsQuery(), cancellationToken);
     Task<AssetMetadata> IAssetQueryBuilder.GetById(Guid id) => mediator.Send(new GetAssetQuery(id), cancellationToken);
-    Task<AssetMetadata> IAssetCommandBuilder.Create(CreateAsset createAsset)
-        => mediator.Send(new CreateAssetCommand(createAsset), cancellationToken);
-    Task<AssetMetadata> IAssetCommandBuilder.Update(UpdateAsset updateAsset)
-        => mediator.Send(new UpdateAssetCommand(updateAsset), cancellationToken);
+    Task<AssetMetadata> IAssetCommandBuilder.Create(CreateAsset asset)
+        => mediator.Send(new CreateAssetCommand(asset), cancellationToken);
+    Task<AssetMetadata> IAssetCommandBuilder.Update(UpdateAsset asset)
+        => mediator.Send(new UpdateAssetCommand(asset), cancellationToken);
     Task IAssetCommandBuilder.Delete(Guid id) => mediator.Send(new DeleteAssetCommand(id), cancellationToken);
     Task<TransformationDefinition> ITransformationCommandBuilder.Create(CreateTransformationDefinition transformation)
         => mediator.Send(new CreateTransformationCommand(transformation), cancellationToken);

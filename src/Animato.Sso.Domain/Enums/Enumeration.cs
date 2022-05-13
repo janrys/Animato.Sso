@@ -1,7 +1,7 @@
 namespace Animato.Sso.Domain.Enums;
 using System.Reflection;
 
-public abstract class Enumeration : IEnumeration, IComparable
+public abstract class Enumeration : IEnumeration
 {
     protected Enumeration(int value, string name)
     {

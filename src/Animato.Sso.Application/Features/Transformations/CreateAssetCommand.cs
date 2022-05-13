@@ -1,5 +1,3 @@
-using Animato.Sso.Application.Features.Assets;
-
 namespace Animato.Sso.Application.Features.Transformations;
 using System;
 using System.Threading;
@@ -8,8 +6,6 @@ using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
-using Animato.Sso.Domain.Enums;
-using Animato.Sso.Domain.Events;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;

@@ -1,6 +1,4 @@
 namespace Animato.Sso.Infrastructure.Services.Persistence;
-using System.Collections.Generic;
-using System.Web;
 using Animato.Sso.Domain.Entities;
 using Azure;
 using Azure.Data.Tables;

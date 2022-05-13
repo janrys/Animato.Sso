@@ -14,8 +14,8 @@ public class ImageResizerAssetTransformation : BaseTransformation, IAssetTransfo
     public override async Task<Stream> Transform(Stream asset, string parameters = null)
     {
         var parsedParameters = ParseParameters(parameters);
-        var widthParameter = parsedParameters?.FirstOrDefault(p => p.Key.Equals("width", StringComparison.OrdinalIgnoreCase)) ?? null;
-        var heightParameter = parsedParameters?.FirstOrDefault(p => p.Key.Equals("height", StringComparison.OrdinalIgnoreCase)) ?? null;
+        var widthParameter = parsedParameters?.FirstOrDefault(p => p.Key.Equals("width", StringComparison.OrdinalIgnoreCase));
+        var heightParameter = parsedParameters?.FirstOrDefault(p => p.Key.Equals("height", StringComparison.OrdinalIgnoreCase));
 
         if (!widthParameter.HasValue || string.IsNullOrEmpty(widthParameter.Value.Value)
             || !int.TryParse(widthParameter.Value.Value, out var width))

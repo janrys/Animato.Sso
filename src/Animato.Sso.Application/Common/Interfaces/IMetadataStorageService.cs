@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
 
 public interface IMetadataStorageService

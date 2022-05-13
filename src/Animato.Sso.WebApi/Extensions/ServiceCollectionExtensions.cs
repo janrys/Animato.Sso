@@ -3,7 +3,6 @@ namespace Animato.Sso.WebApi.Extensions;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Animato.Sso.Application.Common.Interfaces;
-using Animato.Sso.Infrastructure.Services.Persistence;
 using Animato.Sso.WebApi.Filters;
 using Animato.Sso.WebApi.Services;
 using FluentValidation.AspNetCore;
@@ -51,7 +50,7 @@ public static class ServiceCollectionExtensions
                 Version = "v1",
                 Title = "Asset API",
                 Description = "An ASP.NET Core Web API for managing assets",
-                TermsOfService = new Uri("https://example.com/terms"),
+                TermsOfService = new Uri("https://www.animato.cz/terms"),
                 Contact = new OpenApiContact
                 {
                     Name = "Animato",

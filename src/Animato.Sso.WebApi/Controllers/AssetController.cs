@@ -123,6 +123,6 @@ public class AssetController : ApiControllerBase
         return Ok(assets);
     }
 
-    
+
 
 }

@@ -13,7 +13,7 @@ public abstract class BaseTransformation : IAssetTransformation
     protected const string PARAMETER_VALUE_SPLIT = "=";
     protected const string ASSET_TYPE_ANY = "*";
 
-    public BaseTransformation(string code, string description, params string[] assetTypes)
+    protected BaseTransformation(string code, string description, params string[] assetTypes)
     {
         Code = code;
         Description = description;

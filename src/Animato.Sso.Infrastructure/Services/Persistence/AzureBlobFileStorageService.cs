@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Exceptions;
@@ -77,7 +76,7 @@ public class AzureBlobFileStorageService : IFileStorageService
 
         try
         {
-            await assetContainerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob
+            await assetContainerClient.CreateIfNotExistsAsync(PublicAccessType.Blob
                 , cancellationToken: cancellationToken);
             return true;
         }

@@ -11,6 +11,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddWebApi(builder.Environment);
 
+
 var app = builder.Build();
 //if (app.Environment.IsDevelopment())
 if (true)

@@ -1,6 +1,7 @@
 namespace Animato.Sso.WebApi.Extensions;
 
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.WebApi.Filters;
@@ -10,9 +11,12 @@ using Hellang.Middleware.ProblemDetails;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
 
 public static class ServiceCollectionExtensions
 {
+    private static readonly bool UseNewtonsoft = false;
+
     public static IConfigurationBuilder AddCustomConfiguration(this IConfigurationBuilder builder, string environmentName)
         => builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true)
@@ -114,7 +118,7 @@ public static class ServiceCollectionExtensions
         services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
         services.AddControllers()
             .AddFluentValidation()
-            .AddJsonOptions(options => options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
+            .AddJsonSerialization();
 
         services.Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true);
 
@@ -122,5 +126,33 @@ public static class ServiceCollectionExtensions
         services.AddCustomProblemDetails();
 
         return services;
+    }
+
+    public static IMvcBuilder AddJsonSerialization(this IMvcBuilder mvcBuilder)
+    {
+        if (UseNewtonsoft)
+        {
+            var contractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy()
+            };
+
+            mvcBuilder.AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+                options.SerializerSettings.ContractResolver = contractResolver;
+            });
+        }
+        else
+        {
+            mvcBuilder
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                });
+        }
+
+        return mvcBuilder;
     }
 }

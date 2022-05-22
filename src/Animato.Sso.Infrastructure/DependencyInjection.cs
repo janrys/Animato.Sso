@@ -28,6 +28,9 @@ public static class DependencyInjection
         services.AddSingleton(blobStorageOptions);
         services.AddSingleton<IFileStorageService, AzureBlobFileStorageService>();
 
+        services.AddSingleton<InMemoryDataContext>();
+        services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+
         var qrCodeAuthenticatorOptions = new GoogleQrCodeTotpAuthenticatorOptions();
         configuration.Bind(GoogleQrCodeTotpAuthenticatorOptions.CONFIGURATION_KEY, qrCodeAuthenticatorOptions);
         services.AddSingleton(qrCodeAuthenticatorOptions);

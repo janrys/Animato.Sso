@@ -430,6 +430,9 @@ dotnet_naming_rule.parameters_rule.severity = warning
 # CS1591: Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1591.severity = none
 
+# CA1805: Member is explicitly initialized to its default value
+dotnet_diagnostic.CA1805.severity = suggestion
+
 # CA1822: Member does not access instance data and can be marked as static
 dotnet_diagnostic.CA1822.severity = suggestion
 

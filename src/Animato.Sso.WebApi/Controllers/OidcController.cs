@@ -3,6 +3,7 @@ namespace Animato.Sso.WebApi.Controllers;
 using System.Security.Claims;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Models;
 using Animato.Sso.WebApi.Extensions;
 using Animato.Sso.WebApi.Models;
 using MediatR;
@@ -17,16 +18,64 @@ public class OidcController : ApiControllerBase
 
     public OidcController(ISender mediator, ILogger<OidcController> logger) : base(mediator) => this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+
+    /// <summary>
+    /// Authorization endpoint
+    /// </summary>
+    /// <param name="authorizationRequest"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>Asset  metadata</returns>
+    [HttpGet("authorize", Name = "Authorize")]
+    public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest authorizationRequest, CancellationToken cancellationToken)
+    {
+        if (authorizationRequest is null)
+        {
+            return BadRequest($"{nameof(authorizationRequest)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(authorizationRequest.ResponseType))
+        {
+            return BadRequest($"{nameof(authorizationRequest.ResponseType)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(authorizationRequest.ClientId))
+        {
+            return BadRequest($"{nameof(authorizationRequest.ClientId)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(authorizationRequest.RedirectUri))
+        {
+            return BadRequest($"{nameof(authorizationRequest.RedirectUri)} must have a value");
+        }
+
+        if (!User.Identity.IsAuthenticated)
+        {
+            var routeValuesDictionary = new RouteValueDictionary();
+            Request.Query.Keys.ToList().ForEach(key => routeValuesDictionary.Add(key, Request.Query[key]));
+            return RedirectToRoute("login", routeValuesDictionary);
+        }
+
+        var authorizationResult = await this.CommandForCurrentUser(cancellationToken).User.Authorize(authorizationRequest);
+
+        if (!authorizationResult.IsAuthorized)
+        {
+            return Forbid();
+        }
+
+        return Ok(authorizationRequest);
+    }
+
+
     /// <summary>
     /// Authorization endpoint
     /// </summary>
     /// <param name="authenticator"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Asset  metadata</returns>
-    [HttpGet("authorize", Name = "Authorize")]
-    public async Task<IActionResult> Authorize([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
+    [HttpGet("login", Name = "login")]
+    public async Task<IActionResult> Login([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(Authorize));
+        logger.LogDebug("Executing action {Action}", nameof(Login));
         var fileContents = await System.IO.File.ReadAllTextAsync("./Content/Authorize.html", cancellationToken);
 
 
@@ -91,6 +140,7 @@ public class OidcController : ApiControllerBase
         {
             var claims = new List<Claim>
         {
+            new Claim(ClaimTypes.NameIdentifier, loginModel.UserName),
             new Claim(ClaimTypes.Name, loginModel.UserName),
             new Claim("FullName", loginModel.UserName),
             new Claim(ClaimTypes.Role, "Administrator"),
@@ -106,7 +156,7 @@ public class OidcController : ApiControllerBase
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
                 IsPersistent = true,
                 IssuedUtc = DateTimeOffset.UtcNow,
-                RedirectUri = "\authorize"
+                RedirectUri = "\\login"
             };
 
             await HttpContext.SignInAsync(
@@ -117,6 +167,7 @@ public class OidcController : ApiControllerBase
 
         }
 
-        return LocalRedirect(Url.GetLocalUrl("/authorize"));
+        // return LocalRedirect(Url.GetLocalUrl("/login"));
+        return RedirectToRoute("login");
     }
 }

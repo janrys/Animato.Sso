@@ -1,84 +1,55 @@
 namespace Animato.Sso.WebApi.Common;
-using Animato.Sso.Application.Features.Assets;
-using Animato.Sso.Application.Features.Partners;
-using Animato.Sso.Application.Features.Transformations;
+
+using System.Security.Claims;
+using Animato.Sso.Application.Features.Users;
 using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
 using MediatR;
 
 public interface ICommandBuilder
 {
-    IAssetCommandBuilder Asset { get; }
-    ITransformationCommandBuilder Transformation { get; }
+    IUserCommandBuilder User { get; }
 }
 
-public interface IAssetCommandBuilder
+public interface IUserCommandBuilder
 {
-    Task<AssetMetadata> Create(CreateAsset asset);
-    Task<AssetMetadata> Update(UpdateAsset asset);
-    Task Delete(Guid id);
+    Task<AuthorizationResult> Authorize(AuthorizationRequest authorizationRequest);
 }
-
-public interface ITransformationCommandBuilder
-{
-    Task<TransformationDefinition> Create(CreateTransformationDefinition transformation);
-    Task<TransformationDefinition> Update(UpdateTransformationDefinition transformation);
-    Task Delete(Guid id);
-}
-
 
 public interface IQueryBuilder
 {
-    IAssetQueryBuilder Asset { get; }
-    ITransformationQueryBuilder Transformation { get; }
+    IUserQueryBuilder User { get; }
 }
 
-public interface IAssetQueryBuilder
+public interface IUserQueryBuilder
 {
-    Task<IEnumerable<AssetMetadata>> GetAll();
-    Task<AssetMetadata> GetById(Guid id);
+    Task<IEnumerable<User>> GetAll();
+    Task<User> GetByUserName(string userName);
 }
 
-public interface ITransformationQueryBuilder
-{
-    Task<IEnumerable<TransformationDefinition>> GetAll();
-    Task<TransformationDefinition> GetById(Guid id);
-    Task<IEnumerable<string>> GetRegistered();
-}
-
-public class CommandQueryBuilder : ICommandBuilder, IAssetCommandBuilder, ITransformationCommandBuilder
-    , IQueryBuilder, IAssetQueryBuilder, ITransformationQueryBuilder
+public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder
+    , IQueryBuilder, IUserQueryBuilder
 
 {
     private readonly ISender mediator;
     private readonly CancellationToken cancellationToken;
+    private readonly ClaimsPrincipal user;
 
     public CommandQueryBuilder(ISender mediator) : this(mediator, CancellationToken.None) { }
-    public CommandQueryBuilder(ISender mediator, CancellationToken cancellationToken)
+    public CommandQueryBuilder(ISender mediator, ClaimsPrincipal user) : this(mediator, user, CancellationToken.None) { }
+    public CommandQueryBuilder(ISender mediator, CancellationToken cancellationToken) : this(mediator, null, cancellationToken) { }
+    public CommandQueryBuilder(ISender mediator, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
         this.mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        this.user = user;
         this.cancellationToken = cancellationToken;
     }
 
-    IAssetCommandBuilder ICommandBuilder.Asset => this;
-    IAssetQueryBuilder IQueryBuilder.Asset => this;
-    ITransformationCommandBuilder ICommandBuilder.Transformation => this;
-    ITransformationQueryBuilder IQueryBuilder.Transformation => this;
+    IUserCommandBuilder ICommandBuilder.User => this;
+    IUserQueryBuilder IQueryBuilder.User => this;
 
-    Task<IEnumerable<AssetMetadata>> IAssetQueryBuilder.GetAll() => mediator.Send(new GetAssetsQuery(), cancellationToken);
-    Task<AssetMetadata> IAssetQueryBuilder.GetById(Guid id) => mediator.Send(new GetAssetQuery(id), cancellationToken);
-    Task<AssetMetadata> IAssetCommandBuilder.Create(CreateAsset asset)
-        => mediator.Send(new CreateAssetCommand(asset), cancellationToken);
-    Task<AssetMetadata> IAssetCommandBuilder.Update(UpdateAsset asset)
-        => mediator.Send(new UpdateAssetCommand(asset), cancellationToken);
-    Task IAssetCommandBuilder.Delete(Guid id) => mediator.Send(new DeleteAssetCommand(id), cancellationToken);
-    Task<TransformationDefinition> ITransformationCommandBuilder.Create(CreateTransformationDefinition transformation)
-        => mediator.Send(new CreateTransformationCommand(transformation), cancellationToken);
-    Task<TransformationDefinition> ITransformationCommandBuilder.Update(UpdateTransformationDefinition transformation)
-        => mediator.Send(new UpdateTransformationCommand(transformation), cancellationToken);
-    Task ITransformationCommandBuilder.Delete(Guid id) => mediator.Send(new DeleteTransformationCommand(id), cancellationToken);
-    Task<IEnumerable<TransformationDefinition>> ITransformationQueryBuilder.GetAll()
-        => mediator.Send(new GetTransformationsQuery(), cancellationToken);
-    Task<TransformationDefinition> ITransformationQueryBuilder.GetById(Guid id) => mediator.Send(new GetTransformationQuery(id), cancellationToken);
-    Task<IEnumerable<string>> ITransformationQueryBuilder.GetRegistered() => mediator.Send(new GetRegisteredTransformationsQuery(), cancellationToken);
+    Task<IEnumerable<User>> IUserQueryBuilder.GetAll() => mediator.Send(new GetUsersQuery(user), cancellationToken);
+    Task<User> IUserQueryBuilder.GetByUserName(string userName) => mediator.Send(new GetUserByUserNameQuery(userName, user), cancellationToken);
+    Task<AuthorizationResult> IUserCommandBuilder.Authorize(AuthorizationRequest authorizationRequest)
+        => mediator.Send(new AuthorizeUserCommand(authorizationRequest, user), cancellationToken);
 }

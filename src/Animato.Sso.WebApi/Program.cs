@@ -1,5 +1,4 @@
 using Animato.Sso.Application;
-using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Infrastructure;
 using Animato.Sso.WebApi.Extensions;
 

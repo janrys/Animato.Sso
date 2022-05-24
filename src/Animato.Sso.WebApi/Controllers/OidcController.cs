@@ -92,7 +92,7 @@ public class OidcController : ApiControllerBase
 
 
     /// <summary>
-    /// Authorization endpoint
+    /// Interactive user login
     /// </summary>
     /// <param name="authenticator"></param>
     /// <param name="cancellationToken">Cancelation token</param>
@@ -143,7 +143,7 @@ public class OidcController : ApiControllerBase
     }
 
     /// <summary>
-    /// Authorization endpoint for users
+    /// User login validation
     /// </summary>
     /// <param name="loginModel"></param>
     /// <param name="authenticator"></param>

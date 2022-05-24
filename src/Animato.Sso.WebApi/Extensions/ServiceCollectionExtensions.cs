@@ -53,8 +53,8 @@ public static class ServiceCollectionExtensions
             options.SwaggerDoc("v1", new OpenApiInfo
             {
                 Version = "v1",
-                Title = "Asset API",
-                Description = "An ASP.NET Core Web API for managing assets",
+                Title = "Animato SSO API",
+                Description = "An ASP.NET Web API for authorization implementing OAuth/OIDC protocols",
                 TermsOfService = new Uri("https://www.animato.cz/terms"),
                 Contact = new OpenApiContact
                 {

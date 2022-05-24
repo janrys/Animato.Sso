@@ -20,6 +20,19 @@ public class InMemoryUserRepository : IUserRepository
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    public Task<User> GetById(UserId userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(dataContext.Users.FirstOrDefault(u => u.Id == userId));
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, ERROR_LOADING_USERS);
+            throw;
+        }
+    }
+
     public Task<User> GetUserByUserName(string userName, CancellationToken cancellationToken)
     {
         try

@@ -8,12 +8,16 @@
   <h1>Hello World!  User: ***username***</h1>
 
   <form method="post" action="/authorize/interactive">
+    <input name="redirectUrl" type="hidden" value="***redirectUrl***" />
+    <label>User name</label>
     <input name="userName" />
+    <label>Password</label>
     <input name="password" />
-    <input name="qrCode" />
     <button type="submit" name="action" value="login">Login</button>
-    <button type="submit" name="action" value="logout">Logout</button>
+    <label>One-time code</label>
+    <input name="qrCode" />
     <button type="submit" name="action" value="validateQrCode">Validate QR code</button>
+    <button type="submit" name="action" value="logout">Logout</button>
   </form>
 
   <p>

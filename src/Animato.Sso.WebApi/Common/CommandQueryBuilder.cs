@@ -14,6 +14,8 @@ public interface ICommandBuilder
 public interface IUserCommandBuilder
 {
     Task<AuthorizationResult> Authorize(AuthorizationRequest authorizationRequest);
+    Task<User> Login(string userName, string password);
+    Task<TokenResult> GetToken(TokenRequest tokenRequest);
 }
 
 public interface IQueryBuilder
@@ -52,4 +54,8 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder
     Task<User> IUserQueryBuilder.GetByUserName(string userName) => mediator.Send(new GetUserByUserNameQuery(userName, user), cancellationToken);
     Task<AuthorizationResult> IUserCommandBuilder.Authorize(AuthorizationRequest authorizationRequest)
         => mediator.Send(new AuthorizeUserCommand(authorizationRequest, user), cancellationToken);
+    Task<User> IUserCommandBuilder.Login(string userName, string password)
+        => mediator.Send(new LoginUserCommand(userName, password), cancellationToken);
+    Task<TokenResult> IUserCommandBuilder.GetToken(TokenRequest tokenRequest)
+        => mediator.Send(new GetTokenCommand(tokenRequest), cancellationToken);
 }

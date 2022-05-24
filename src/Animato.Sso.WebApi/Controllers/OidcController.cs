@@ -48,11 +48,23 @@ public class OidcController : ApiControllerBase
             return BadRequest($"{nameof(authorizationRequest.RedirectUri)} must have a value");
         }
 
+        Flurl.Url redirectUri;
+        if (!Flurl.Url.IsValid(authorizationRequest.RedirectUri))
+        {
+            return BadRequest($"{nameof(authorizationRequest.RedirectUri)} is not a valid URI");
+        }
+        else
+        {
+            redirectUri = Flurl.Url.Parse(authorizationRequest.RedirectUri);
+        }
+
         if (!User.Identity.IsAuthenticated)
         {
-            var routeValuesDictionary = new RouteValueDictionary();
-            Request.Query.Keys.ToList().ForEach(key => routeValuesDictionary.Add(key, Request.Query[key]));
-            return RedirectToRoute("login", routeValuesDictionary);
+            var routeValuesDictionary = new RouteValueDictionary
+            {
+                { "from", $"{Request.Path}{Request.QueryString}" }
+            };
+            return RedirectToRoute("Login", routeValuesDictionary);
         }
 
         var authorizationResult = await this.CommandForCurrentUser(cancellationToken).User.Authorize(authorizationRequest);
@@ -62,7 +74,20 @@ public class OidcController : ApiControllerBase
             return Forbid();
         }
 
-        return Ok(authorizationRequest);
+        if (authorizationResult.AuthorizationFlow == Domain.Enums.AuthorizationFlowType.Token)
+        {
+            redirectUri.SetFragment($"access_token={authorizationResult.AccessToken}");
+            return Redirect(redirectUri.ToString());
+        }
+        else if (authorizationResult.AuthorizationFlow == Domain.Enums.AuthorizationFlowType.Code)
+        {
+            redirectUri.QueryParams.AddOrReplace("code", authorizationResult.Code);
+            return Redirect(redirectUri.ToString());
+        }
+        else
+        {
+            return StatusCode(StatusCodes.Status501NotImplemented, "Flow not implemented");
+        }
     }
 
 
@@ -72,22 +97,23 @@ public class OidcController : ApiControllerBase
     /// <param name="authenticator"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Asset  metadata</returns>
-    [HttpGet("login", Name = "login")]
+    [HttpGet("login", Name = "Login")]
     public async Task<IActionResult> Login([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
     {
+
         logger.LogDebug("Executing action {Action}", nameof(Login));
         var fileContents = await System.IO.File.ReadAllTextAsync("./Content/Authorize.html", cancellationToken);
 
 
         if (User.Identity.IsAuthenticated)
         {
-            var lastChanged = User.Claims.FirstOrDefault(c => c.Type == "LastChanged")?.Value;
+            var lastChanged = User.Claims.FirstOrDefault(c => c.Type == "last_changed")?.Value;
 
             if (!DateTime.TryParse(lastChanged, DefaultOptions.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
                 || lastChangedParsed <= DateTime.UtcNow.AddMinutes(-1))
             {
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                return RedirectToRoute("Authorize");
+                return LocalRedirect(Url.GetLocalUrl(Request.Query["from"].ToString() ?? "/login"));
             }
         }
 
@@ -107,6 +133,7 @@ public class OidcController : ApiControllerBase
             userName = "not authenticated";
         }
         fileContents = fileContents.Replace("***username***", userName);
+        fileContents = fileContents.Replace("***redirectUrl***", Request.Query["from"]);
 
         return new ContentResult
         {
@@ -120,10 +147,11 @@ public class OidcController : ApiControllerBase
     /// </summary>
     /// <param name="loginModel"></param>
     /// <param name="authenticator"></param>
+    /// <param name="claimFactory"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Asset  metadata</returns>
     [HttpPost("authorize/interactive", Name = "AuthorizeInteractive")]
-    public async Task<IActionResult> AuthorizeInteractive([FromForm] LoginModel loginModel, [FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
+    public async Task<IActionResult> AuthorizeInteractive([FromForm] LoginModel loginModel, [FromServices] IQrCodeTotpAuthenticator authenticator, [FromServices] IClaimFactory claimFactory, CancellationToken cancellationToken)
     {
         logger.LogDebug("Executing action {Action}", nameof(AuthorizeInteractive));
 
@@ -138,17 +166,20 @@ public class OidcController : ApiControllerBase
         }
         else
         {
-            var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, loginModel.UserName),
-            new Claim(ClaimTypes.Name, loginModel.UserName),
-            new Claim("FullName", loginModel.UserName),
-            new Claim(ClaimTypes.Role, "Administrator"),
-            new Claim("LastChanged", DateTime.UtcNow.ToString(DefaultOptions.DatePattern, DefaultOptions.Culture)) // last change from database
-        };
+            if (string.IsNullOrEmpty(loginModel.UserName) || string.IsNullOrEmpty(loginModel.Password))
+            {
+                return Forbid();
+            }
 
-            var claimsIdentity = new ClaimsIdentity(
-                claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var user = await this.Command(cancellationToken).User.Login(loginModel.UserName, loginModel.Password);
+
+            if (user is null)
+            {
+                return Forbid();
+            }
+
+            var claims = claimFactory.GenerateClaims(user);
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
             var authProperties = new AuthenticationProperties
             {
@@ -163,11 +194,64 @@ public class OidcController : ApiControllerBase
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
-
-
         }
 
-        // return LocalRedirect(Url.GetLocalUrl("/login"));
-        return RedirectToRoute("login");
+        return LocalRedirect(Url.GetLocalUrl(loginModel.RedirectUrl ?? "/login"));
+    }
+
+    /// <summary>
+    /// Token endpoint
+    /// </summary>
+    /// <param name="tokenRequest"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>Asset  metadata</returns>
+    [HttpPost("token", Name = "Token")]
+    public async Task<IActionResult> Token([FromBody] TokenRequest tokenRequest, CancellationToken cancellationToken)
+    {
+        if (tokenRequest is null)
+        {
+            return BadRequest($"{nameof(tokenRequest)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(tokenRequest.GrantType))
+        {
+            return BadRequest($"{nameof(tokenRequest.GrantType)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(tokenRequest.ClientId))
+        {
+            return BadRequest($"{nameof(tokenRequest.ClientId)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(tokenRequest.RedirectUri))
+        {
+            return BadRequest($"{nameof(tokenRequest.RedirectUri)} must have a value");
+        }
+
+        if (!Flurl.Url.IsValid(tokenRequest.RedirectUri))
+        {
+            return BadRequest($"{nameof(tokenRequest.RedirectUri)} is not a valid URI");
+        }
+
+        if (string.IsNullOrEmpty(tokenRequest.ClientSecret))
+        {
+            return BadRequest($"{nameof(tokenRequest.ClientSecret)} must have a value");
+        }
+
+        var tokenResult = await this.Command(cancellationToken).User.GetToken(tokenRequest);
+
+        if (!tokenResult.IsAuthorized)
+        {
+            return Forbid();
+        }
+
+        if (tokenResult.GrantType == Domain.Enums.GrantType.Code)
+        {
+            return Ok(new TokenResponse(tokenResult));
+        }
+        else
+        {
+            return StatusCode(StatusCodes.Status501NotImplemented, "Grant type not implemented");
+        }
     }
 }

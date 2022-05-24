@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddCustomConfiguration(builder.Environment.EnvironmentName);
 builder.Logging.AddCustomLogging();
-builder.Services.AddApplication();
+builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddWebApi(builder.Environment);
 

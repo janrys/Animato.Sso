@@ -30,6 +30,9 @@ public static class DependencyInjection
 
         services.AddSingleton<InMemoryDataContext>();
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+        services.AddSingleton<IApplicationRepository, InMemoryApplicationRepository>();
+        services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
+        services.AddSingleton<IDataSeeder, InMemoryDataSeeder>();
 
         var qrCodeAuthenticatorOptions = new GoogleQrCodeTotpAuthenticatorOptions();
         configuration.Bind(GoogleQrCodeTotpAuthenticatorOptions.CONFIGURATION_KEY, qrCodeAuthenticatorOptions);

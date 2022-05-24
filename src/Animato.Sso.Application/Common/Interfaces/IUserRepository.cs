@@ -9,4 +9,5 @@ public interface IUserRepository
 {
     Task<IEnumerable<User>> GetUsers(CancellationToken cancellationToken);
     Task<User> GetUserByUserName(string userName, CancellationToken cancellationToken);
+    Task<User> GetById(UserId userId, CancellationToken cancellationToken);
 }

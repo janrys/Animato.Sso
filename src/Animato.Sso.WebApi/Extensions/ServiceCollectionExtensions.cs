@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.WebApi.BackgroundServices;
 using Animato.Sso.WebApi.Filters;
 using Animato.Sso.WebApi.Services;
 using FluentValidation.AspNetCore;
@@ -125,6 +126,15 @@ public static class ServiceCollectionExtensions
         services.AddCustomSwaggerGen();
         services.AddCustomProblemDetails();
 
+        services.AddBackgroundServices();
+
+        return services;
+    }
+
+    public static IServiceCollection AddBackgroundServices(this IServiceCollection services)
+    {
+        services.AddHostedService<DataSeedService>();
+        services.AddHostedService<PurgeExpiredCodesService>();
         return services;
     }
 

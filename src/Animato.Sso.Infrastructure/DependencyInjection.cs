@@ -17,17 +17,6 @@ public static class DependencyInjection
     {
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-        var tableStorageOptions = new AzureTableStorageOptions();
-        configuration.Bind(AzureTableStorageOptions.CONFIGURATION_KEY, tableStorageOptions);
-        services.AddSingleton(tableStorageOptions);
-        services.AddSingleton<IMetadataStorageService, AzureTableMetadataStorageService>();
-        services.AddSingleton<ITransformationStorageService, AzureTableMetadataStorageService>();
-
-        var blobStorageOptions = new AzureBlobStorageOptions();
-        configuration.Bind(AzureBlobStorageOptions.CONFIGURATION_KEY, blobStorageOptions);
-        services.AddSingleton(blobStorageOptions);
-        services.AddSingleton<IFileStorageService, AzureBlobFileStorageService>();
-
         services.AddSingleton<InMemoryDataContext>();
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
         services.AddSingleton<IApplicationRepository, InMemoryApplicationRepository>();

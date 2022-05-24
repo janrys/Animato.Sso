@@ -33,5 +33,11 @@
     <ProjectReference Include="..\Animato.Sso.Application\Animato.Sso.Application.csproj" />
     <ProjectReference Include="..\Animato.Sso.Infrastructure\Animato.Sso.Infrastructure.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <None Update="Content\Authorize.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>

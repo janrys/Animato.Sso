@@ -32,8 +32,6 @@ var cookiePolicyOptions = new CookiePolicyOptions
 app.UseCookiePolicy(cookiePolicyOptions);
 app.MapControllers();
 
-app.Services.GetService<IMetadataStorageService>().Seed();
-
 app.Run();
 
 

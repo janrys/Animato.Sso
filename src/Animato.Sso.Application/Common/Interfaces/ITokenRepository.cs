@@ -12,4 +12,6 @@ public interface ITokenRepository
     Task<IEnumerable<Token>> Insert(Token accessToken, Token refreshToken, CancellationToken cancellationToken);
     Task<IEnumerable<Token>> Insert(Token accessToken, Token refreshToken, Token idToken, CancellationToken cancellationToken);
     Task<int> RemoveExpiredTokens();
+    Task Revoke(string token, CancellationToken cancellationToken);
+    Task RevokeTokensForUser(UserId id, CancellationToken cancellationToken);
 }

@@ -81,6 +81,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
                 return authorizationResult;
             }
             catch (ForbiddenAccessException) { throw; }
+            catch (Exceptions.ValidationException) { throw; }
             catch (Exception exception)
             {
                 logger.LogError(exception, ERROR_AUTHORIZING_USER);

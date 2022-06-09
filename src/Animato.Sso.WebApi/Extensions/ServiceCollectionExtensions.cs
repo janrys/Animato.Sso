@@ -100,6 +100,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpContextAccessor();
         services.AddSingleton<ICurrentUserService, HttpContextCurrentUserService>();
+        services.AddSingleton<IMetadataService, MetadataService>();
 
         if (environment.IsDevelopment())
         {

@@ -13,6 +13,7 @@ public class InMemoryTokenRepository : ITokenRepository
     private const string ERROR_LOADING_TOKENS = "Error loading tokens";
     private const string ERROR_INSERTING_TOKENS = "Error inserting token";
     private const string ERROR_DELETING_TOKENS = "Error deleting token";
+    private const string ERROR_UPDATING_TOKENS = "Error updating token";
     private readonly InMemoryDataContext dataContext;
     private readonly ILogger<InMemoryTokenRepository> logger;
 
@@ -93,6 +94,47 @@ public class InMemoryTokenRepository : ITokenRepository
         catch (Exception exception)
         {
             logger.LogError(exception, ERROR_DELETING_TOKENS);
+            throw;
+        }
+    }
+
+    public Task Revoke(string token, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var storedToken = dataContext.Tokens
+                .FirstOrDefault(t => t.Value == token && !t.Revoked.HasValue);
+
+            if (storedToken is not null)
+            {
+                storedToken.Revoked = DateTime.UtcNow;
+            }
+
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, ERROR_UPDATING_TOKENS);
+            throw;
+        }
+    }
+
+    public Task RevokeTokensForUser(UserId id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var storedToken = dataContext.Tokens.Where(t => t.UserId == id && !t.Revoked.HasValue);
+
+            if (storedToken.Any())
+            {
+                storedToken.ToList().ForEach(t => t.Revoked = DateTime.UtcNow);
+            }
+
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, ERROR_UPDATING_TOKENS);
             throw;
         }
     }

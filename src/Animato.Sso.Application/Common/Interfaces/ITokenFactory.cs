@@ -1,5 +1,6 @@
 namespace Animato.Sso.Application.Common.Interfaces;
 
+using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
 
 public interface ITokenFactory
@@ -8,4 +9,5 @@ public interface ITokenFactory
     string GenerateCode();
     string GenerateRefreshToken(User user);
     string GenerateIdToken(User user, Application application, params ApplicationRole[] roles);
+    TokenInfo GetTokenInfo(string token);
 }

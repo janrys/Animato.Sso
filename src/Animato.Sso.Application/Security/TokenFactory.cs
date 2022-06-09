@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
 using Microsoft.IdentityModel.Tokens;
 using SecurityClaims = System.Security.Claims;
@@ -15,13 +16,15 @@ public class TokenFactory : ITokenFactory
 {
     private readonly OidcOptions oidcOptions;
     private readonly IClaimFactory claimFactory;
+    private readonly IMetadataService metadataService;
     private static readonly char[] AlloweCharsForCode =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray();
 
-    public TokenFactory(OidcOptions oidcOptions, IClaimFactory claimFactory)
+    public TokenFactory(OidcOptions oidcOptions, IClaimFactory claimFactory, IMetadataService metadataService)
     {
         this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
         this.claimFactory = claimFactory ?? throw new ArgumentNullException(nameof(claimFactory));
+        this.metadataService = metadataService ?? throw new ArgumentNullException(nameof(metadataService));
     }
 
 
@@ -56,7 +59,7 @@ public class TokenFactory : ITokenFactory
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Issuer = oidcOptions.Issuer,
+            Issuer = metadataService.GetIssuer(),
             NotBefore = DateTime.UtcNow,
             Audience = application.Code,
             Subject = new ClaimsIdentity(claims),
@@ -71,4 +74,25 @@ public class TokenFactory : ITokenFactory
     public string GenerateIdToken(User user, Application application, params ApplicationRole[] roles) => throw new NotImplementedException();
 
     public string GenerateRefreshToken(User user) => GenerateRandomString(oidcOptions.RefreshTokenLength);
+    public TokenInfo GetTokenInfo(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+
+        if (!tokenHandler.CanReadToken(token))
+        {
+            return new TokenInfo() { Active = false };
+        }
+
+        var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        return new TokenInfo()
+        {
+            Active = true,
+            Audience = jwtToken.Audiences.FirstOrDefault(),
+            ClientId = jwtToken.Audiences.FirstOrDefault(),
+            Issuer = jwtToken.Issuer,
+            UserName = jwtToken.Claims.FirstOrDefault(c => c.Type == "login")?.Value ?? "",
+            IssuedAt = ((DateTimeOffset)jwtToken.IssuedAt).ToUnixTimeSeconds(),
+            Expiration = ((DateTimeOffset)jwtToken.ValidTo).ToUnixTimeSeconds(),
+        };
+    }
 }

@@ -1,6 +1,7 @@
 namespace Animato.Sso.WebApi.Common;
 
 using System.Security.Claims;
+using Animato.Sso.Application.Features.Tokens;
 using Animato.Sso.Application.Features.Users;
 using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
@@ -9,6 +10,7 @@ using MediatR;
 public interface ICommandBuilder
 {
     IUserCommandBuilder User { get; }
+    ITokenCommandBuilder Token { get; }
 }
 
 public interface IUserCommandBuilder
@@ -18,9 +20,16 @@ public interface IUserCommandBuilder
     Task<TokenResult> GetToken(TokenRequest tokenRequest);
 }
 
+public interface ITokenCommandBuilder
+{
+    Task RevokeToken(string token);
+    Task RevokeAllTokens();
+}
+
 public interface IQueryBuilder
 {
     IUserQueryBuilder User { get; }
+    ITokenQueryBuilder Token { get; }
 }
 
 public interface IUserQueryBuilder
@@ -29,8 +38,13 @@ public interface IUserQueryBuilder
     Task<User> GetByUserName(string userName);
 }
 
-public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder
-    , IQueryBuilder, IUserQueryBuilder
+public interface ITokenQueryBuilder
+{
+    Task<TokenInfo> GetTokenInfo(string token);
+}
+
+public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenCommandBuilder
+    , IQueryBuilder, IUserQueryBuilder, ITokenQueryBuilder
 
 {
     private readonly ISender mediator;
@@ -49,13 +63,31 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder
 
     IUserCommandBuilder ICommandBuilder.User => this;
     IUserQueryBuilder IQueryBuilder.User => this;
+    ITokenCommandBuilder ICommandBuilder.Token => this;
+    ITokenQueryBuilder IQueryBuilder.Token => this;
 
-    Task<IEnumerable<User>> IUserQueryBuilder.GetAll() => mediator.Send(new GetUsersQuery(user), cancellationToken);
-    Task<User> IUserQueryBuilder.GetByUserName(string userName) => mediator.Send(new GetUserByUserNameQuery(userName, user), cancellationToken);
+    Task<IEnumerable<User>> IUserQueryBuilder.GetAll()
+        => mediator.Send(new GetUsersQuery(user), cancellationToken);
+
+    Task<User> IUserQueryBuilder.GetByUserName(string userName)
+        => mediator.Send(new GetUserByUserNameQuery(userName, user), cancellationToken);
+
+    Task<TokenInfo> ITokenQueryBuilder.GetTokenInfo(string token)
+        => mediator.Send(new GetTokenInfoQuery(token), cancellationToken);
+
+
     Task<AuthorizationResult> IUserCommandBuilder.Authorize(AuthorizationRequest authorizationRequest)
         => mediator.Send(new AuthorizeUserCommand(authorizationRequest, user), cancellationToken);
+
     Task<User> IUserCommandBuilder.Login(string userName, string password)
         => mediator.Send(new LoginUserCommand(userName, password), cancellationToken);
+
     Task<TokenResult> IUserCommandBuilder.GetToken(TokenRequest tokenRequest)
         => mediator.Send(new GetTokenCommand(tokenRequest), cancellationToken);
+
+    Task ITokenCommandBuilder.RevokeToken(string token)
+        => mediator.Send(new RevokeTokenCommand(token), cancellationToken);
+
+    Task ITokenCommandBuilder.RevokeAllTokens()
+        => mediator.Send(new RevokeAllTokensCommand(user), cancellationToken);
 }

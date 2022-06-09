@@ -10,6 +10,8 @@ using Animato.Sso.WebApi.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc;
 
 [Route("")]
@@ -25,7 +27,7 @@ public class OidcController : ApiControllerBase
     /// </summary>
     /// <param name="authorizationRequest"></param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns>Asset  metadata</returns>
+    /// <returns>Authorization response</returns>
     [HttpGet("authorize", Name = "Authorize")]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest authorizationRequest, CancellationToken cancellationToken)
     {
@@ -75,12 +77,12 @@ public class OidcController : ApiControllerBase
             return Forbid();
         }
 
-        if (authorizationResult.AuthorizationFlow == Domain.Enums.AuthorizationFlowType.Token)
+        if (authorizationResult.AuthorizationFlow == AuthorizationFlowType.Token)
         {
             redirectUri.SetFragment($"access_token={authorizationResult.AccessToken}");
             return Redirect(redirectUri.ToString());
         }
-        else if (authorizationResult.AuthorizationFlow == Domain.Enums.AuthorizationFlowType.Code)
+        else if (authorizationResult.AuthorizationFlow == AuthorizationFlowType.Code)
         {
             redirectUri.QueryParams.AddOrReplace("code", authorizationResult.Code);
             return Redirect(redirectUri.ToString());
@@ -97,7 +99,7 @@ public class OidcController : ApiControllerBase
     /// </summary>
     /// <param name="authenticator"></param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns>Asset  metadata</returns>
+    /// <returns></returns>
     [HttpGet("login", Name = "Login")]
     public async Task<IActionResult> Login([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
     {
@@ -150,7 +152,7 @@ public class OidcController : ApiControllerBase
     /// <param name="authenticator"></param>
     /// <param name="claimFactory"></param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns>Asset  metadata</returns>
+    /// <returns></returns>
     [HttpPost("authorize/interactive", Name = "AuthorizeInteractive")]
     public async Task<IActionResult> AuthorizeInteractive([FromForm] LoginModel loginModel, [FromServices] IQrCodeTotpAuthenticator authenticator, [FromServices] IClaimFactory claimFactory, CancellationToken cancellationToken)
     {
@@ -205,7 +207,7 @@ public class OidcController : ApiControllerBase
     /// </summary>
     /// <param name="tokenRequest"></param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns>Asset  metadata</returns>
+    /// <returns>Token response</returns>
     [HttpPost("token", Name = "Token")]
     public async Task<IActionResult> Token([FromBody] TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
@@ -257,5 +259,95 @@ public class OidcController : ApiControllerBase
         {
             return StatusCode(StatusCodes.Status501NotImplemented, $"Grant type {tokenResult.GrantType.Name} not implemented");
         }
+    }
+
+    /// <summary>
+    /// Revoke token endpoint
+    /// </summary>
+    /// <param name="revokeRequest"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns></returns>
+    [HttpPost("revoke", Name = "Revoke")]
+    public async Task<IActionResult> Revoke([FromBody] RevokeRequest revokeRequest, CancellationToken cancellationToken)
+    {
+        if (revokeRequest is null)
+        {
+            return BadRequest($"{nameof(revokeRequest)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(revokeRequest.Token))
+        {
+            return BadRequest($"{nameof(revokeRequest.Token)} must have a value");
+        }
+
+        await this.Command(cancellationToken).Token.RevokeToken(revokeRequest.Token);
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Get token information and status
+    /// </summary>
+    /// <param name="tokenInfoRequest"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns></returns>
+    [HttpPost("token-info", Name = "TokenInfo")]
+    public async Task<IActionResult> TokenInfo([FromBody] RevokeRequest tokenInfoRequest, CancellationToken cancellationToken)
+    {
+        if (tokenInfoRequest is null)
+        {
+            return BadRequest($"{nameof(tokenInfoRequest)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(tokenInfoRequest.Token))
+        {
+            return BadRequest($"{nameof(tokenInfoRequest.Token)} must have a value");
+        }
+
+        var tokenInfo = await this.Query(cancellationToken).Token.GetTokenInfo(tokenInfoRequest.Token);
+
+        return Ok(tokenInfo);
+    }
+
+    /// <summary>
+    /// Logout user and invalidate all tokens
+    /// </summary>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns></returns>
+    [HttpPost("logout", Name = "Logout")]
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+    {
+        if (User.Identity.IsAuthenticated)
+        {
+            await this.CommandForCurrentUser(cancellationToken).Token.RevokeAllTokens();
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Ok();
+        }
+
+        return LocalRedirect(Url.GetLocalUrl(Request.Query["from"].ToString() ?? "/login"));
+    }
+
+    /// <summary>
+    /// Get server metadata
+    /// </summary>
+    /// <param name="metadataService"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <param name="linkGenerator"></param>
+    /// <returns>Metadata</returns>
+    [HttpGet("/.well-known/oauth-authorization-server", Name = "Metadata")]
+    [HttpGet("/.well-known/openid-configuration", Name = "MetadataOidc")]
+    public async Task<IActionResult> Metadata([FromServices] IMetadataService metadataService, [FromServices] LinkGenerator linkGenerator, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        var metadata = new SystemMetadata()
+        {
+            Issuer = metadataService.GetIssuer(),
+            AuthorizationEndpoint = linkGenerator.GetUriByAction(HttpContext, "Authorize"),
+            TokenEndpoint = linkGenerator.GetUriByAction(HttpContext, "Token"),
+            RevocationEndpoint = linkGenerator.GetUriByAction(HttpContext, "Revoke"),
+            ResponseTypesSupported = new List<string>(new string[] { "code", "token" }),
+        };
+        return Ok(metadata);
     }
 }

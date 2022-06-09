@@ -3,25 +3,30 @@ namespace Animato.Sso.Infrastructure.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Features.Users;
 using Animato.Sso.Domain.Entities;
+using Animato.Sso.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
 public class InMemoryDataSeeder : IDataSeeder
 {
     private readonly InMemoryDataContext dataContext;
     private readonly IPasswordHasher passwordHasher;
+    private readonly OidcOptions oidcOptions;
     private readonly ILogger<InMemoryDataSeeder> logger;
     private User testUser;
     private User adminUser;
     private Application testAplication;
     private Application crmAplication;
 
-    public InMemoryDataSeeder(InMemoryDataContext dataContext, IPasswordHasher passwordHasher, ILogger<InMemoryDataSeeder> logger)
+    public InMemoryDataSeeder(InMemoryDataContext dataContext, IPasswordHasher passwordHasher, OidcOptions oidcOptions
+        , ILogger<InMemoryDataSeeder> logger)
     {
         this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
         this.passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
+        this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -123,7 +128,11 @@ public class InMemoryDataSeeder : IDataSeeder
             Name = "TestApp1",
             Code = "test:app1",
             Secrets = new List<string>(new string[] { "secret1", "secret2" }),
-            RedirectUris = new List<string>(new string[] { "https://testapp1.animato.cz", "https://testapp1.animato.com" })
+            RedirectUris = new List<string>(new string[] { "https://testapp1.animato.cz", "https://testapp1.animato.com" }),
+            AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
+            RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
+            Use2Fa = false,
+            AuthorizationType = AuthorizationType.Password
         };
         dataContext.Applications.Add(application);
         testAplication = application;
@@ -134,7 +143,11 @@ public class InMemoryDataSeeder : IDataSeeder
             Name = "Animato.Crm",
             Code = "animato:crm",
             Secrets = new List<string>(new string[] { "secret1", "secret2" }),
-            RedirectUris = new List<string>(new string[] { "https://crm.animato.cz", "https://crm.animato.com" })
+            RedirectUris = new List<string>(new string[] { "https://crm.animato.cz", "https://crm.animato.com" }),
+            AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
+            RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
+            Use2Fa = false,
+            AuthorizationType = AuthorizationType.Password
         };
         dataContext.Applications.Add(application);
         crmAplication = application;
@@ -145,7 +158,11 @@ public class InMemoryDataSeeder : IDataSeeder
             Name = "Animato.NoRights",
             Code = "animato:norights",
             Secrets = new List<string>(new string[] { "secret1", "secret2" }),
-            RedirectUris = new List<string>(new string[] { "https://norights.animato.cz", "https://norights.animato.com" })
+            RedirectUris = new List<string>(new string[] { "https://norights.animato.cz", "https://norights.animato.com" }),
+            AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
+            RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
+            Use2Fa = false,
+            AuthorizationType = AuthorizationType.Password
         };
         dataContext.Applications.Add(application);
 
@@ -160,7 +177,7 @@ public class InMemoryDataSeeder : IDataSeeder
             Login = "tester@animato.cz",
             Name = "Tester",
             FullName = "Tester Tester",
-            Use2FA = false,
+            AuthorizationType = AuthorizationType.Password,
             LastChanged = DateTime.UtcNow,
         };
         user.UpdatePasswordAndHash(passwordHasher, "testpass");
@@ -173,7 +190,7 @@ public class InMemoryDataSeeder : IDataSeeder
             Login = "admin@animato.cz",
             Name = "Admin",
             FullName = "Admin Admin",
-            Use2FA = true,
+            AuthorizationType = AuthorizationType.Password,
             LastChanged = DateTime.UtcNow,
         };
         user.UpdatePasswordAndHash(passwordHasher, "adminpass");

@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.Application.Models;
+namespace Animato.Sso.Application.Models;
 
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,4 +28,8 @@ public class TokenRequest
     [JsonProperty("client_secret")]
     [JsonPropertyName("client_secret")]
     public string ClientSecret { get; set; }
+
+    [JsonProperty("refresh_token")]
+    [JsonPropertyName("refresh_token")]
+    public string RefreshToken { get; set; }
 }

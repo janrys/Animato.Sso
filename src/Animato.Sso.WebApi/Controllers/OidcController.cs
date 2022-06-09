@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Models;
+using Animato.Sso.Domain.Enums;
 using Animato.Sso.WebApi.Extensions;
 using Animato.Sso.WebApi.Models;
 using MediatR;
@@ -223,19 +224,22 @@ public class OidcController : ApiControllerBase
             return BadRequest($"{nameof(tokenRequest.ClientId)} must have a value");
         }
 
-        if (string.IsNullOrEmpty(tokenRequest.RedirectUri))
-        {
-            return BadRequest($"{nameof(tokenRequest.RedirectUri)} must have a value");
-        }
-
-        if (!Flurl.Url.IsValid(tokenRequest.RedirectUri))
-        {
-            return BadRequest($"{nameof(tokenRequest.RedirectUri)} is not a valid URI");
-        }
-
         if (string.IsNullOrEmpty(tokenRequest.ClientSecret))
         {
             return BadRequest($"{nameof(tokenRequest.ClientSecret)} must have a value");
+        }
+
+        if (tokenRequest.GrantType.Equals(GrantType.Code.GrantCode, StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrEmpty(tokenRequest.RedirectUri))
+            {
+                return BadRequest($"{nameof(tokenRequest.RedirectUri)} must have a value");
+            }
+
+            if (!Flurl.Url.IsValid(tokenRequest.RedirectUri))
+            {
+                return BadRequest($"{nameof(tokenRequest.RedirectUri)} is not a valid URI");
+            }
         }
 
         var tokenResult = await this.Command(cancellationToken).User.GetToken(tokenRequest);
@@ -245,13 +249,13 @@ public class OidcController : ApiControllerBase
             return Forbid();
         }
 
-        if (tokenResult.GrantType == Domain.Enums.GrantType.Code)
+        if (tokenResult.GrantType == GrantType.Code || tokenResult.GrantType == GrantType.Refresh)
         {
             return Ok(new TokenResponse(tokenResult));
         }
         else
         {
-            return StatusCode(StatusCodes.Status501NotImplemented, "Grant type not implemented");
+            return StatusCode(StatusCodes.Status501NotImplemented, $"Grant type {tokenResult.GrantType.Name} not implemented");
         }
     }
 }

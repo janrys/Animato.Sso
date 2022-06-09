@@ -17,11 +17,7 @@ public static class DependencyInjection
     {
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-        services.AddSingleton<InMemoryDataContext>();
-        services.AddSingleton<IUserRepository, InMemoryUserRepository>();
-        services.AddSingleton<IApplicationRepository, InMemoryApplicationRepository>();
-        services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
-        services.AddSingleton<IDataSeeder, InMemoryDataSeeder>();
+        services.AddInMemoryPersistence();
 
         var qrCodeAuthenticatorOptions = new GoogleQrCodeTotpAuthenticatorOptions();
         configuration.Bind(GoogleQrCodeTotpAuthenticatorOptions.CONFIGURATION_KEY, qrCodeAuthenticatorOptions);
@@ -34,6 +30,17 @@ public static class DependencyInjection
         services.AddSingleton<IDomainEventService>(service
             => new LoggingDomainEventService(new NullDomainEventService(), service.GetService<ILogger<LoggingDomainEventService>>()));
 
+        return services;
+    }
+
+    private static IServiceCollection AddInMemoryPersistence(this IServiceCollection services)
+    {
+        services.AddSingleton<InMemoryDataContext>();
+        services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+        services.AddSingleton<IApplicationRepository, InMemoryApplicationRepository>();
+        services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
+        services.AddSingleton<ITokenRepository, InMemoryTokenRepository>();
+        services.AddSingleton<IDataSeeder, InMemoryDataSeeder>();
         return services;
     }
 

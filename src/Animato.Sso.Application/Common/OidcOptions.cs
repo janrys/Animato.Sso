@@ -8,4 +8,5 @@ public class OidcOptions
     public int RefreshTokenExpirationMinutes { get; set; } = 60 * 24;
     public int CodeExpirationMinutes { get; set; } = 10;
     public string Issuer { get; set; } = "Animato.Sso";
+    public int RefreshTokenLength { get; set; } = 60;
 }

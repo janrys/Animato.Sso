@@ -25,15 +25,17 @@ public class TokenFactory : ITokenFactory
     }
 
 
-    public string GenerateCode()
+    public string GenerateCode() => GenerateRandomString(oidcOptions.AuthCodeLength);
+
+    private string GenerateRandomString(int length)
     {
-        var data = new byte[4 * oidcOptions.AuthCodeLength];
+        var data = new byte[4 * length];
         using (var crypto = RandomNumberGenerator.Create())
         {
             crypto.GetBytes(data);
         }
-        var result = new StringBuilder(oidcOptions.AuthCodeLength);
-        for (var i = 0; i < oidcOptions.AuthCodeLength; i++)
+        var result = new StringBuilder(length);
+        for (var i = 0; i < length; i++)
         {
             var rnd = BitConverter.ToUInt32(data, i * 4);
             var idx = rnd % AlloweCharsForCode.Length;
@@ -58,7 +60,7 @@ public class TokenFactory : ITokenFactory
             NotBefore = DateTime.UtcNow,
             Audience = application.Code,
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(oidcOptions.AccessTokenExpirationMinutes),
+            Expires = DateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -68,5 +70,5 @@ public class TokenFactory : ITokenFactory
 
     public string GenerateIdToken(User user, Application application, params ApplicationRole[] roles) => throw new NotImplementedException();
 
-    public string GenerateRefreshToken(User user) => throw new NotImplementedException();
+    public string GenerateRefreshToken(User user) => GenerateRandomString(oidcOptions.RefreshTokenLength);
 }

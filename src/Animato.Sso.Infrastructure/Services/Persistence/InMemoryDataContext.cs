@@ -10,4 +10,5 @@ public class InMemoryDataContext
     public List<ApplicationRole> ApplicationRoles { get; set; } = new List<ApplicationRole> { };
     public List<UserApplicationRole> UserApplicationRoles { get; set; } = new List<UserApplicationRole> { };
     public List<AuthorizationCode> Codes { get; set; } = new List<AuthorizationCode> { };
+    public List<Token> Tokens { get; set; } = new List<Token> { };
 }

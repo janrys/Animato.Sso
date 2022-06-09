@@ -12,7 +12,12 @@ public class TokenResponse
         ExpiresIn = tokenResult.ExpiresIn;
         RefreshToken = tokenResult.RefreshToken;
         IdToken = tokenResult.IdToken;
+        RefreshTokenExpiresIn = string.IsNullOrEmpty(tokenResult.RefreshToken) ? null : tokenResult.RefreshTokenExpiresIn;
     }
+
+    [JsonProperty("token_type")]
+    [JsonPropertyName("token_type")]
+    public string TokenType { get; set; } = "Bearer";
 
     [JsonProperty("access_token")]
     [JsonPropertyName("access_token")]
@@ -25,6 +30,10 @@ public class TokenResponse
     [JsonProperty("refresh_token")]
     [JsonPropertyName("refresh_token")]
     public string RefreshToken { get; set; }
+
+    [JsonProperty("refresh_token_expires_in")]
+    [JsonPropertyName("refresh_token_expires_in")]
+    public int? RefreshTokenExpiresIn { get; set; }
 
     [JsonProperty("id_token")]
     [JsonPropertyName("id_token")]

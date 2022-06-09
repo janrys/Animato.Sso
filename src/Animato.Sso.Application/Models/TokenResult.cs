@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.Application.Models;
+namespace Animato.Sso.Application.Models;
 
 using Animato.Sso.Domain.Enums;
 
@@ -9,5 +9,6 @@ public class TokenResult
     public string AccessToken { get; set; }
     public int ExpiresIn { get; set; }
     public string RefreshToken { get; set; }
+    public int RefreshTokenExpiresIn { get; set; }
     public string IdToken { get; set; }
 }

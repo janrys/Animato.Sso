@@ -1,4 +1,7 @@
 namespace Animato.Sso.Domain.Entities;
+
+using Animato.Sso.Domain.Enums;
+
 public class User
 {
     public UserId Id { get; set; }
@@ -7,7 +10,7 @@ public class User
     public string Login { get; set; }
     public string Salt { get; set; }
     public string Password { get; set; }
-    public bool Use2FA { get; set; }
+    public AuthorizationType AuthorizationType { get; set; }
     public DateTime LastChanged { get; set; }
 }
 

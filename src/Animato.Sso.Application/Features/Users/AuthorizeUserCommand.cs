@@ -30,15 +30,22 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
         private readonly IUserRepository userRepository;
         private readonly IApplicationRepository applicationRepository;
         private readonly IAuthorizationCodeRepository authorizationCodeRepository;
+        private readonly ITokenRepository tokenRepository;
         private readonly ITokenFactory tokenFactory;
         private readonly ILogger<AuthorizeUserCommandHandler> logger;
         private const string ERROR_AUTHORIZING_USER = "Error authorizing user";
 
-        public AuthorizeUserCommandHandler(IUserRepository userRepository, IApplicationRepository applicationRepository, IAuthorizationCodeRepository authorizationCodeRepository, ITokenFactory tokenFactory, ILogger<AuthorizeUserCommandHandler> logger)
+        public AuthorizeUserCommandHandler(IUserRepository userRepository
+            , IApplicationRepository applicationRepository
+            , IAuthorizationCodeRepository authorizationCodeRepository
+            , ITokenRepository tokenRepository
+            , ITokenFactory tokenFactory
+            , ILogger<AuthorizeUserCommandHandler> logger)
         {
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
             this.authorizationCodeRepository = authorizationCodeRepository ?? throw new ArgumentNullException(nameof(authorizationCodeRepository));
+            this.tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
             this.tokenFactory = tokenFactory ?? throw new ArgumentNullException(nameof(tokenFactory));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -113,16 +120,29 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
             }
         }
 
-        private Task<AuthorizationResult> AuthorizeUserImplicitFlow(User user, Application application, IEnumerable<ApplicationRole> userRoles, AuthorizationRequest authorizationRequest, CancellationToken cancellationToken)
+        private async Task<AuthorizationResult> AuthorizeUserImplicitFlow(User user, Application application, IEnumerable<ApplicationRole> userRoles, AuthorizationRequest authorizationRequest, CancellationToken cancellationToken)
         {
+            var accessToken = new Token()
+            {
+                Value = tokenFactory.GenerateAccessToken(user, application, userRoles.ToArray()),
+                ApplicationId = application.Id,
+                Created = DateTime.UtcNow,
+                Expiration = DateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
+                TokenType = TokenType.Access,
+                UserId = user.Id
+            };
+
+            await tokenRepository.Insert(accessToken, cancellationToken);
+
             var authorizationResult = new AuthorizationResult
             {
                 IsAuthorized = true,
                 AuthorizationFlow = AuthorizationFlowType.Token,
-                AccessToken = tokenFactory.GenerateAccessToken(user, application, userRoles.ToArray())
+                AccessToken = accessToken.Value
             };
 
-            return Task.FromResult(authorizationResult);
+
+            return authorizationResult;
         }
 
         private async Task<AuthorizationResult> AuthorizeUserCodeFlow(User user, Application application, IEnumerable<ApplicationRole> userRoles, AuthorizationRequest authorizationRequest, CancellationToken cancellationToken)

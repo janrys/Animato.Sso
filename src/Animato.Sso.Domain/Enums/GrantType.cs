@@ -1,12 +1,16 @@
-﻿namespace Animato.Sso.Domain.Enums;
+namespace Animato.Sso.Domain.Enums;
 
 public class GrantType : Enumeration
 {
     /// <summary>
-    /// Default brand for new partners
+    /// Code flow
     /// </summary>
     public static readonly GrantType Code = new(0, nameof(Code), "authorization_code");
 
+    /// <summary>
+    /// Refresh access token flow
+    /// </summary>
+    public static readonly GrantType Refresh = new(1, nameof(Refresh), "refresh_token");
 
 
     public string GrantCode { get; }

@@ -10,8 +10,6 @@ using Animato.Sso.WebApi.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc;
 
 [Route("")]
@@ -103,7 +101,6 @@ public class OidcController : ApiControllerBase
     [HttpGet("login", Name = "Login")]
     public async Task<IActionResult> Login([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
     {
-
         logger.LogDebug("Executing action {Action}", nameof(Login));
         var fileContents = await System.IO.File.ReadAllTextAsync("./Content/Authorize.html", cancellationToken);
 
@@ -211,6 +208,8 @@ public class OidcController : ApiControllerBase
     [HttpPost("token", Name = "Token")]
     public async Task<IActionResult> Token([FromBody] TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
+        logger.LogDebug("Executing action {Action}", nameof(Token));
+
         if (tokenRequest is null)
         {
             return BadRequest($"{nameof(tokenRequest)} must have a value");
@@ -270,6 +269,8 @@ public class OidcController : ApiControllerBase
     [HttpPost("revoke", Name = "Revoke")]
     public async Task<IActionResult> Revoke([FromBody] RevokeRequest revokeRequest, CancellationToken cancellationToken)
     {
+        logger.LogDebug("Executing action {Action}", nameof(Revoke));
+
         if (revokeRequest is null)
         {
             return BadRequest($"{nameof(revokeRequest)} must have a value");
@@ -294,6 +295,8 @@ public class OidcController : ApiControllerBase
     [HttpPost("token-info", Name = "TokenInfo")]
     public async Task<IActionResult> TokenInfo([FromBody] RevokeRequest tokenInfoRequest, CancellationToken cancellationToken)
     {
+        logger.LogDebug("Executing action {Action}", nameof(TokenInfo));
+
         if (tokenInfoRequest is null)
         {
             return BadRequest($"{nameof(tokenInfoRequest)} must have a value");
@@ -317,6 +320,8 @@ public class OidcController : ApiControllerBase
     [HttpPost("logout", Name = "Logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
+        logger.LogDebug("Executing action {Action}", nameof(Logout));
+
         if (User.Identity.IsAuthenticated)
         {
             await this.CommandForCurrentUser(cancellationToken).Token.RevokeAllTokens();
@@ -338,6 +343,8 @@ public class OidcController : ApiControllerBase
     [HttpGet("/.well-known/openid-configuration", Name = "MetadataOidc")]
     public async Task<IActionResult> Metadata([FromServices] IMetadataService metadataService, [FromServices] LinkGenerator linkGenerator, CancellationToken cancellationToken)
     {
+        logger.LogDebug("Executing action {Action}", nameof(Metadata));
+
         cancellationToken.ThrowIfCancellationRequested();
         await Task.CompletedTask;
         var metadata = new SystemMetadata()

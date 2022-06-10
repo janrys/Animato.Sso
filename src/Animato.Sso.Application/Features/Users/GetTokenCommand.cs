@@ -1,7 +1,6 @@
 namespace Animato.Sso.Application.Features.Users;
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common;

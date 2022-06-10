@@ -31,4 +31,9 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Animato.Sso.Domain\Animato.Sso.Domain.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Features\Tokens\DTOs\" />
+	  <Folder Include="Features\Users\DTOs\" />
+	</ItemGroup>
 </Project>

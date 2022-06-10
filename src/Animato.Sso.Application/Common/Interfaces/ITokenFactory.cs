@@ -10,4 +10,6 @@ public interface ITokenFactory
     string GenerateRefreshToken(User user);
     string GenerateIdToken(User user, Application application, params ApplicationRole[] roles);
     TokenInfo GetTokenInfo(string token);
+
+    string GenerateRandomString(int length);
 }

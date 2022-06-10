@@ -85,7 +85,7 @@ public class InMemoryDataSeeder : IDataSeeder
         {
             var applicationRole = new ApplicationRole()
             {
-                Id = new ApplicationRoleId(Guid.NewGuid()),
+                Id = ApplicationRoleId.New(),
                 ApplicationId = application.Id,
                 Name = $"{application.Name}_guest"
             };
@@ -93,7 +93,7 @@ public class InMemoryDataSeeder : IDataSeeder
 
             applicationRole = new ApplicationRole()
             {
-                Id = new ApplicationRoleId(Guid.NewGuid()),
+                Id = ApplicationRoleId.New(),
                 ApplicationId = application.Id,
                 Name = $"{application.Name}_reader"
             };
@@ -101,7 +101,7 @@ public class InMemoryDataSeeder : IDataSeeder
 
             applicationRole = new ApplicationRole()
             {
-                Id = new ApplicationRoleId(Guid.NewGuid()),
+                Id = ApplicationRoleId.New(),
                 ApplicationId = application.Id,
                 Name = $"{application.Name}_writer"
             };
@@ -109,7 +109,7 @@ public class InMemoryDataSeeder : IDataSeeder
 
             applicationRole = new ApplicationRole()
             {
-                Id = new ApplicationRoleId(Guid.NewGuid()),
+                Id = ApplicationRoleId.New(),
                 ApplicationId = application.Id,
                 Name = $"{application.Name}_admin"
             };
@@ -124,7 +124,7 @@ public class InMemoryDataSeeder : IDataSeeder
     {
         var application = new Application()
         {
-            Id = new Domain.Entities.ApplicationId(Guid.NewGuid()),
+            Id = Domain.Entities.ApplicationId.New(),
             Name = "TestApp1",
             Code = "test:app1",
             Secrets = new List<string>(new string[] { "secret1", "secret2" }),
@@ -139,7 +139,7 @@ public class InMemoryDataSeeder : IDataSeeder
 
         application = new Application()
         {
-            Id = new Domain.Entities.ApplicationId(Guid.NewGuid()),
+            Id = Domain.Entities.ApplicationId.New(),
             Name = "Animato.Crm",
             Code = "animato:crm",
             Secrets = new List<string>(new string[] { "secret1", "secret2" }),
@@ -154,7 +154,7 @@ public class InMemoryDataSeeder : IDataSeeder
 
         application = new Application()
         {
-            Id = new Domain.Entities.ApplicationId(Guid.NewGuid()),
+            Id = Domain.Entities.ApplicationId.New(),
             Name = "Animato.NoRights",
             Code = "animato:norights",
             Secrets = new List<string>(new string[] { "secret1", "secret2" }),
@@ -173,7 +173,7 @@ public class InMemoryDataSeeder : IDataSeeder
     {
         var user = new User()
         {
-            Id = new UserId(Guid.NewGuid()),
+            Id = UserId.New(),
             Login = "tester@animato.cz",
             Name = "Tester",
             FullName = "Tester Tester",
@@ -186,7 +186,7 @@ public class InMemoryDataSeeder : IDataSeeder
 
         user = new User()
         {
-            Id = new UserId(Guid.NewGuid()),
+            Id = UserId.New(),
             Login = "admin@animato.cz",
             Name = "Admin",
             FullName = "Admin Admin",

@@ -1,6 +1,8 @@
 namespace Animato.Sso.WebApi.Common;
 
 using System.Security.Claims;
+using Animato.Sso.Application.Features.Applications;
+using Animato.Sso.Application.Features.Applications.DTOs;
 using Animato.Sso.Application.Features.Tokens;
 using Animato.Sso.Application.Features.Users;
 using Animato.Sso.Application.Models;
@@ -11,6 +13,7 @@ public interface ICommandBuilder
 {
     IUserCommandBuilder User { get; }
     ITokenCommandBuilder Token { get; }
+    IApplicationCommandBuilder Application { get; }
 }
 
 public interface IUserCommandBuilder
@@ -26,10 +29,18 @@ public interface ITokenCommandBuilder
     Task RevokeAllTokens();
 }
 
+public interface IApplicationCommandBuilder
+{
+    Task<Application> Create(CreateApplicationModel application);
+    Task<Application> Update(ApplicationId applicationId, CreateApplicationModel application);
+    Task Delete(ApplicationId applicationId);
+}
+
 public interface IQueryBuilder
 {
     IUserQueryBuilder User { get; }
     ITokenQueryBuilder Token { get; }
+    IApplicationQueryBuilder Application { get; }
 }
 
 public interface IUserQueryBuilder
@@ -43,8 +54,14 @@ public interface ITokenQueryBuilder
     Task<TokenInfo> GetTokenInfo(string token);
 }
 
-public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenCommandBuilder
-    , IQueryBuilder, IUserQueryBuilder, ITokenQueryBuilder
+public interface IApplicationQueryBuilder
+{
+    Task<IEnumerable<Application>> GetAll();
+    Task<Application> GetByClientId(string clientId);
+}
+
+public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenCommandBuilder, IApplicationCommandBuilder
+    , IQueryBuilder, IUserQueryBuilder, ITokenQueryBuilder, IApplicationQueryBuilder
 
 {
     private readonly ISender mediator;
@@ -65,6 +82,8 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
     IUserQueryBuilder IQueryBuilder.User => this;
     ITokenCommandBuilder ICommandBuilder.Token => this;
     ITokenQueryBuilder IQueryBuilder.Token => this;
+    IApplicationCommandBuilder ICommandBuilder.Application => this;
+    IApplicationQueryBuilder IQueryBuilder.Application => this;
 
     Task<IEnumerable<User>> IUserQueryBuilder.GetAll()
         => mediator.Send(new GetUsersQuery(user), cancellationToken);
@@ -90,4 +109,19 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
 
     Task ITokenCommandBuilder.RevokeAllTokens()
         => mediator.Send(new RevokeAllTokensCommand(user), cancellationToken);
+
+    public Task<IEnumerable<Application>> GetAll()
+        => mediator.Send(new GetAllApplicationsQuery(user), cancellationToken);
+
+    public Task<Application> GetByClientId(string clientId)
+        => mediator.Send(new GetApplicationByCodeQuery(clientId, user), cancellationToken);
+
+    public Task<Application> Create(CreateApplicationModel application)
+        => mediator.Send(new CreateApplicationCommand(application, user), cancellationToken);
+
+    public Task<Application> Update(ApplicationId applicationId, CreateApplicationModel application)
+        => mediator.Send(new UpdateApplicationCommand(applicationId, application, user), cancellationToken);
+
+    public Task Delete(ApplicationId applicationId)
+        => mediator.Send(new DeleteApplicationCommand(applicationId, user), cancellationToken);
 }

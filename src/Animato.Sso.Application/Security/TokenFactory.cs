@@ -30,7 +30,7 @@ public class TokenFactory : ITokenFactory
 
     public string GenerateCode() => GenerateRandomString(oidcOptions.AuthCodeLength);
 
-    private string GenerateRandomString(int length)
+    public string GenerateRandomString(int length)
     {
         var data = new byte[4 * length];
         using (var crypto = RandomNumberGenerator.Create())

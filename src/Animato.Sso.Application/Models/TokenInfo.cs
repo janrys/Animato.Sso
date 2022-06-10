@@ -1,7 +1,6 @@
 namespace Animato.Sso.Application.Models;
 
 using System.Text.Json.Serialization;
-using Animato.Sso.Domain.Enums;
 using Newtonsoft.Json;
 
 public class TokenInfo

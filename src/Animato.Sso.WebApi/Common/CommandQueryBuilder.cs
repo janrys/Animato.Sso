@@ -5,6 +5,7 @@ using Animato.Sso.Application.Features.Applications;
 using Animato.Sso.Application.Features.Applications.DTOs;
 using Animato.Sso.Application.Features.Tokens;
 using Animato.Sso.Application.Features.Users;
+using Animato.Sso.Application.Features.Users.DTOs;
 using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
 using MediatR;
@@ -19,8 +20,11 @@ public interface ICommandBuilder
 public interface IUserCommandBuilder
 {
     Task<AuthorizationResult> Authorize(AuthorizationRequest authorizationRequest);
-    Task<User> Login(string userName, string password);
+    Task<User> Login(string login, string password);
     Task<TokenResult> GetToken(TokenRequest tokenRequest);
+    Task<User> Create(CreateUserModel user);
+    Task<User> Update(UserId userID, CreateUserModel user);
+    Task Delete(UserId userID);
 }
 
 public interface ITokenCommandBuilder
@@ -46,7 +50,8 @@ public interface IQueryBuilder
 public interface IUserQueryBuilder
 {
     Task<IEnumerable<User>> GetAll();
-    Task<User> GetByUserName(string userName);
+    Task<User> GetByLogin(string login);
+    Task<User> GetById(UserId id);
 }
 
 public interface ITokenQueryBuilder
@@ -58,6 +63,7 @@ public interface IApplicationQueryBuilder
 {
     Task<IEnumerable<Application>> GetAll();
     Task<Application> GetByClientId(string clientId);
+    Task<Application> GetById(ApplicationId applicationId);
 }
 
 public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenCommandBuilder, IApplicationCommandBuilder
@@ -88,7 +94,7 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
     Task<IEnumerable<User>> IUserQueryBuilder.GetAll()
         => mediator.Send(new GetUsersQuery(user), cancellationToken);
 
-    Task<User> IUserQueryBuilder.GetByUserName(string userName)
+    Task<User> IUserQueryBuilder.GetByLogin(string userName)
         => mediator.Send(new GetUserByUserNameQuery(userName, user), cancellationToken);
 
     Task<TokenInfo> ITokenQueryBuilder.GetTokenInfo(string token)
@@ -101,6 +107,9 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
     Task<User> IUserCommandBuilder.Login(string userName, string password)
         => mediator.Send(new LoginUserCommand(userName, password), cancellationToken);
 
+    Task<User> IUserQueryBuilder.GetById(UserId id)
+        => mediator.Send(new GetUserByIdQuery(id), cancellationToken);
+
     Task<TokenResult> IUserCommandBuilder.GetToken(TokenRequest tokenRequest)
         => mediator.Send(new GetTokenCommand(tokenRequest), cancellationToken);
 
@@ -110,18 +119,30 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
     Task ITokenCommandBuilder.RevokeAllTokens()
         => mediator.Send(new RevokeAllTokensCommand(user), cancellationToken);
 
-    public Task<IEnumerable<Application>> GetAll()
+    Task<IEnumerable<Application>> IApplicationQueryBuilder.GetAll()
         => mediator.Send(new GetAllApplicationsQuery(user), cancellationToken);
 
-    public Task<Application> GetByClientId(string clientId)
+    Task<Application> IApplicationQueryBuilder.GetByClientId(string clientId)
         => mediator.Send(new GetApplicationByCodeQuery(clientId, user), cancellationToken);
 
-    public Task<Application> Create(CreateApplicationModel application)
+    Task<Application> IApplicationCommandBuilder.Create(CreateApplicationModel application)
         => mediator.Send(new CreateApplicationCommand(application, user), cancellationToken);
 
-    public Task<Application> Update(ApplicationId applicationId, CreateApplicationModel application)
+    Task<Application> IApplicationCommandBuilder.Update(ApplicationId applicationId, CreateApplicationModel application)
         => mediator.Send(new UpdateApplicationCommand(applicationId, application, user), cancellationToken);
 
-    public Task Delete(ApplicationId applicationId)
+    Task IApplicationCommandBuilder.Delete(ApplicationId applicationId)
         => mediator.Send(new DeleteApplicationCommand(applicationId, user), cancellationToken);
+
+    Task<Application> IApplicationQueryBuilder.GetById(ApplicationId applicationId)
+        => mediator.Send(new GetApplicationByIdQuery(applicationId, user), cancellationToken);
+
+    Task<User> IUserCommandBuilder.Create(CreateUserModel userModel)
+        => mediator.Send(new CreateUserCommand(userModel, user), cancellationToken);
+
+    Task<User> IUserCommandBuilder.Update(UserId userID, CreateUserModel userModel)
+        => mediator.Send(new UpdateUserCommand(userID, userModel, user), cancellationToken);
+
+    Task IUserCommandBuilder.Delete(UserId userID)
+        => mediator.Send(new DeleteUserCommand(userID, user), cancellationToken);
 }

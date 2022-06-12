@@ -34,6 +34,5 @@
 
 	<ItemGroup>
 	  <Folder Include="Features\Tokens\DTOs\" />
-	  <Folder Include="Features\Users\DTOs\" />
 	</ItemGroup>
 </Project>

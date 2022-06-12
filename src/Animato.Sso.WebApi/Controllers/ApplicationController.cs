@@ -15,7 +15,7 @@ public class ApplicationController : ApiControllerBase
     /// </summary>
     /// <param name="clientId"></param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns></returns>
+    /// <returns>List of applications</returns>
     [HttpGet(Name = "GetApplications")]
     public async Task<IActionResult> GetAll([FromQuery] string clientId, CancellationToken cancellationToken)
     {
@@ -33,20 +33,29 @@ public class ApplicationController : ApiControllerBase
     /// <summary>
     /// Get application
     /// </summary>
-    /// <param name="id">Application code (client id)</param>
+    /// <param name="id">Application id</param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns></returns>
+    /// <returns>Application</returns>
     [HttpGet("{id}", Name = "GetApplicationById")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetByCode));
+        logger.LogDebug("Executing action {Action}", nameof(GetById));
 
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
         }
+        Domain.Entities.ApplicationId applicationId;
+        if (Guid.TryParse(id, out var parsedApplicationId))
+        {
+            applicationId = new Domain.Entities.ApplicationId(parsedApplicationId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
 
-        var application = await this.QueryForCurrentUser(cancellationToken).Application.GetByClientId(id);
+        var application = await this.QueryForCurrentUser(cancellationToken).Application.GetById(applicationId);
 
         if (application is null)
         {
@@ -101,7 +110,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="id">Application id to update</param>
     /// <param name="application">Application changes</param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns>Created application</returns>
+    /// <returns>Updated application</returns>
     [HttpPut("{id}", Name = "UpdateApplication")]
     public async Task<IActionResult> UpdateApplication(string id, [FromBody] CreateApplicationModel application, CancellationToken cancellationToken)
     {
@@ -136,7 +145,7 @@ public class ApplicationController : ApiControllerBase
     /// </summary>
     /// <param name="id">Application id to delete</param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns>Created application</returns>
+    /// <returns></returns>
     [HttpDelete("{id}", Name = "DeleteApplication")]
     public async Task<IActionResult> DeleteApplication(string id, CancellationToken cancellationToken)
     {

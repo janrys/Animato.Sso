@@ -12,5 +12,7 @@ public class User
     public string Password { get; set; }
     public AuthorizationType AuthorizationType { get; set; }
     public DateTime LastChanged { get; set; }
+    public bool IsDeleted { get; set; } = false;
+    public bool IsBlocked { get; set; } = false;
 }
 

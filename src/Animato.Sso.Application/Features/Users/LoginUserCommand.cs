@@ -20,6 +20,15 @@ public class LoginUserCommand : IRequest<User>
     public string UserName { get; }
     public string Password { get; }
 
+    public class LoginUserCommandValidator : AbstractValidator<LoginUserCommand>
+    {
+        public LoginUserCommandValidator()
+        {
+            RuleFor(v => v.UserName).NotNull().WithMessage(v => $"{nameof(v.UserName)} must have a value");
+            RuleFor(v => v.Password).NotEmpty().WithMessage(v => $"{nameof(v.Password)} must have a value");
+        }
+
+    }
     public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, User>
     {
         private readonly IUserRepository userRepository;
@@ -38,9 +47,12 @@ public class LoginUserCommand : IRequest<User>
         {
             try
             {
-                var user = await userRepository.GetUserByUserName(request.UserName.Trim(), cancellationToken);
+                var user = await userRepository.GetUserByLogin(request.UserName.Trim(), cancellationToken);
 
-                if (user is null || !passwordHasher.IsValid(user.Password, request.Password, user.Salt))
+                if (user is null
+                    || user.IsDeleted
+                    || user.IsBlocked
+                    || !passwordHasher.IsValid(user.Password, request.Password, user.Salt))
                 {
                     return null;
                 }
@@ -53,15 +65,5 @@ public class LoginUserCommand : IRequest<User>
                 throw new DataAccessException(ERROR_LOADING_USER, exception);
             }
         }
-    }
-
-    public class LoginUserCommandValidator : AbstractValidator<LoginUserCommand>
-    {
-        public LoginUserCommandValidator()
-        {
-            RuleFor(v => v.UserName).NotNull().WithMessage(v => $"{nameof(v.UserName)} must have a value");
-            RuleFor(v => v.Password).NotEmpty().WithMessage(v => $"{nameof(v.Password)} must have a value");
-        }
-
     }
 }

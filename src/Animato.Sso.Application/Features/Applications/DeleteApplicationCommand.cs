@@ -29,13 +29,16 @@ public class DeleteApplicationCommand : IRequest<Unit>
     public class DeleteApplicationCommandHandler : IRequestHandler<DeleteApplicationCommand, Unit>
     {
         private readonly IApplicationRepository applicationRepository;
+        private readonly IApplicationRoleRepository roleRepository;
         private readonly ILogger<DeleteApplicationCommandHandler> logger;
-        private const string ERROR_CREATING_APPLICATION = "Error creating application";
+        private const string ERROR_DELETING_APPLICATION = "Error deleting application";
 
         public DeleteApplicationCommandHandler(IApplicationRepository applicationRepository
+            , IApplicationRoleRepository roleRepository
             , ILogger<DeleteApplicationCommandHandler> logger)
         {
             this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
+            this.roleRepository = roleRepository ?? throw new ArgumentNullException(nameof(roleRepository));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -45,18 +48,27 @@ public class DeleteApplicationCommand : IRequest<Unit>
             {
                 var application = await applicationRepository.GetById(request.ApplicationId, cancellationToken);
 
-                if (application is not null)
+                if (application is null)
                 {
-                    await applicationRepository.Delete(request.ApplicationId, cancellationToken);
+                    return Unit.Value;
                 }
 
+                var roles = await roleRepository.GetByApplicationId(request.ApplicationId, cancellationToken);
+                if (roles != null && roles.Any())
+                {
+                    throw new Exceptions.ValidationException(
+                        Exceptions.ValidationException.CreateFailure("ApplicationRole", $"Application has {roles.Count()} roles")
+                        );
+                }
+
+                await applicationRepository.Delete(request.ApplicationId, cancellationToken);
                 return Unit.Value;
             }
             catch (Exceptions.ValidationException) { throw; }
             catch (Exception exception)
             {
-                logger.LogError(exception, ERROR_CREATING_APPLICATION);
-                throw new DataAccessException(ERROR_CREATING_APPLICATION, exception);
+                logger.LogError(exception, ERROR_DELETING_APPLICATION);
+                throw new DataAccessException(ERROR_DELETING_APPLICATION, exception);
             }
         }
     }

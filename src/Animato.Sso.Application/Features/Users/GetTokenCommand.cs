@@ -124,9 +124,14 @@ public class GetTokenCommand : IRequest<TokenResult>
                 }
 
                 var user = await userRepository.GetById(userId, cancellationToken);
-                if (user == null)
+                if (user == null || user.IsDeleted)
                 {
                     throw new ForbiddenAccessException("", $"User {userId} not found");
+                }
+
+                if (user.IsBlocked)
+                {
+                    throw new ForbiddenAccessException("", $"User {userId} is blocked");
                 }
 
                 var userRoles = await applicationRepository.GetUserRoles(application.Id, userId, cancellationToken);

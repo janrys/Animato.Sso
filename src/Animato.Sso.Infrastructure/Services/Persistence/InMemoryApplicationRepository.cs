@@ -102,7 +102,7 @@ public class InMemoryApplicationRepository : IApplicationRepository
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_DELETING_APPLICATIONS);
+            logger.LogError(exception, ERROR_INSERTING_APPLICATIONS);
             throw;
         }
     }
@@ -125,7 +125,7 @@ public class InMemoryApplicationRepository : IApplicationRepository
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_DELETING_APPLICATIONS);
+            logger.LogError(exception, ERROR_UPDATING_APPLICATIONS);
             throw;
         }
     }

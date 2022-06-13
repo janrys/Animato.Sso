@@ -54,10 +54,15 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
         {
             try
             {
-                var user = await userRepository.GetUserByUserName(request.User.GetUserName(), cancellationToken);
-                if (user == null)
+                var user = await userRepository.GetUserByLogin(request.User.GetUserName(), cancellationToken);
+                if (user == null || user.IsDeleted)
                 {
                     throw new ForbiddenAccessException(user.Login, $"User {request.User.GetUserName()} not found");
+                }
+
+                if (user.IsBlocked)
+                {
+                    throw new ForbiddenAccessException("", $"User {request.User.GetUserName()} is blocked");
                 }
 
                 var application = await applicationRepository.GetByCode(request.AuthorizationRequest.ClientId, cancellationToken);

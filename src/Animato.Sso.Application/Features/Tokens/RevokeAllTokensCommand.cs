@@ -36,7 +36,7 @@ public class RevokeAllTokensCommand : IRequest<Unit>
         {
             try
             {
-                var user = await userRepository.GetUserByUserName(request.User.GetUserName(), cancellationToken);
+                var user = await userRepository.GetUserByLogin(request.User.GetUserName(), cancellationToken);
                 if (user == null)
                 {
                     throw new ForbiddenAccessException(user.Login, $"User {request.User.GetUserName()} not found");

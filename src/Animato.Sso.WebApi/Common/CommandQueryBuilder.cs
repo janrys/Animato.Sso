@@ -38,6 +38,9 @@ public interface IApplicationCommandBuilder
     Task<Application> Create(CreateApplicationModel application);
     Task<Application> Update(ApplicationId applicationId, CreateApplicationModel application);
     Task Delete(ApplicationId applicationId);
+    Task<ApplicationRole> CreateRole(ApplicationId applicationId, CreateApplicationRoleModel role);
+    Task<ApplicationRole> UpdateRole(ApplicationRoleId roleId, CreateApplicationRoleModel role);
+    Task DeleteRole(ApplicationRoleId roleId);
 }
 
 public interface IQueryBuilder
@@ -64,6 +67,8 @@ public interface IApplicationQueryBuilder
     Task<IEnumerable<Application>> GetAll();
     Task<Application> GetByClientId(string clientId);
     Task<Application> GetById(ApplicationId applicationId);
+    Task<IEnumerable<ApplicationRole>> GetRolesByApplicationId(ApplicationId applicationId);
+    Task<ApplicationRole> GetRoleById(ApplicationRoleId applicationRoleId);
 }
 
 public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenCommandBuilder, IApplicationCommandBuilder
@@ -108,7 +113,7 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
         => mediator.Send(new LoginUserCommand(userName, password), cancellationToken);
 
     Task<User> IUserQueryBuilder.GetById(UserId id)
-        => mediator.Send(new GetUserByIdQuery(id), cancellationToken);
+        => mediator.Send(new GetUserByIdQuery(id, user), cancellationToken);
 
     Task<TokenResult> IUserCommandBuilder.GetToken(TokenRequest tokenRequest)
         => mediator.Send(new GetTokenCommand(tokenRequest), cancellationToken);
@@ -145,4 +150,18 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
 
     Task IUserCommandBuilder.Delete(UserId userID)
         => mediator.Send(new DeleteUserCommand(userID, user), cancellationToken);
+    Task<IEnumerable<ApplicationRole>> IApplicationQueryBuilder.GetRolesByApplicationId(ApplicationId applicationId)
+        => mediator.Send(new GetApplicationRolesByApplicationIdQuery(applicationId, user), cancellationToken);
+
+    Task<ApplicationRole> IApplicationQueryBuilder.GetRoleById(ApplicationRoleId applicationRoleId)
+        => mediator.Send(new GetApplicationRoleByIdQuery(applicationRoleId, user), cancellationToken);
+
+    Task<ApplicationRole> IApplicationCommandBuilder.CreateRole(ApplicationId applicationId, CreateApplicationRoleModel role)
+        => mediator.Send(new CreateApplicationRoleCommand(applicationId, role, user), cancellationToken);
+
+    Task<ApplicationRole> IApplicationCommandBuilder.UpdateRole(ApplicationRoleId roleId, CreateApplicationRoleModel role)
+        => mediator.Send(new UpdateApplicationRoleCommand(roleId, role, user), cancellationToken);
+
+    Task IApplicationCommandBuilder.DeleteRole(ApplicationRoleId roleId)
+        => mediator.Send(new DeleteApplicationRoleCommand(roleId, user), cancellationToken);
 }

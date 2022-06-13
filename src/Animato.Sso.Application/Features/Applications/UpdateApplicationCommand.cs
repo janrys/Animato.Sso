@@ -35,6 +35,7 @@ public class UpdateApplicationCommand : IRequest<Application>
             RuleFor(v => v.Application.Code).NotEmpty().WithMessage(v => $"{nameof(v.Application.Code)} must have a value");
             RuleFor(v => v.Application.Name).NotEmpty().WithMessage(v => $"{nameof(v.Application.Name)} must have a value");
             RuleFor(v => v.Application.RedirectUris).NotEmpty().WithMessage(v => $"{nameof(v.Application.RedirectUris)} must have a value");
+            RuleFor(v => v.ApplicationId).NotEmpty().WithMessage(v => $"{nameof(v.ApplicationId)} must have a value");
         }
     }
 

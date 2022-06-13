@@ -7,6 +7,7 @@ using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Application.Features.Applications.DTOs;
+using Animato.Sso.Application.Features.Users.DTOs;
 using Animato.Sso.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -81,3 +82,4 @@ public class CreateApplicationCommand : IRequest<Application>
     }
 
 }
+

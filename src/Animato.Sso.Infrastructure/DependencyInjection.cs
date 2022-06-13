@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddSingleton<InMemoryDataContext>();
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
         services.AddSingleton<IApplicationRepository, InMemoryApplicationRepository>();
+        services.AddSingleton<IApplicationRoleRepository, InMemoryApplicationRoleRepository>();
         services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
         services.AddSingleton<ITokenRepository, InMemoryTokenRepository>();
         services.AddSingleton<IDataSeeder, InMemoryDataSeeder>();

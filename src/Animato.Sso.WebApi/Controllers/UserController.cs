@@ -170,4 +170,126 @@ public class UserController : ApiControllerBase
         await this.CommandForCurrentUser(cancellationToken).User.Delete(userId);
         return Ok();
     }
+
+    /// <summary>
+    /// Assign application role to user
+    /// </summary>
+    /// <param name="id">User identifier</param>
+    /// <param name="roleId">Application user role identifier</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>User application roles</returns>
+    [HttpPost("{id}/role/{roleId}", Name = "AssignUserRole")]
+    public async Task<IActionResult> AssignUserRole(string id, string roleId, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(AssignUserRole));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(roleId))
+        {
+            return BadRequest($"{nameof(roleId)} must have a value");
+        }
+
+        Domain.Entities.UserId userId;
+        if (Guid.TryParse(id, out var parsedUserId))
+        {
+            userId = new Domain.Entities.UserId(parsedUserId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        Domain.Entities.ApplicationRoleId applicationRoleId;
+        if (Guid.TryParse(roleId, out var parsedApplicationRoleId))
+        {
+            applicationRoleId = new Domain.Entities.ApplicationRoleId(parsedApplicationRoleId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(roleId)} has a wrong format '{roleId}'");
+        }
+
+        var roles = await this.CommandForCurrentUser(cancellationToken).User.AddRole(userId, applicationRoleId);
+        return Ok(roles);
+    }
+
+    /// <summary>
+    /// Get user roles
+    /// </summary>
+    /// <param name="id">User id</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>User</returns>
+    [HttpGet("{id}/role", Name = "GetUserRoles")]
+    public async Task<IActionResult> GetUserRoles(string id, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(GetUserRoles));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        Domain.Entities.UserId userId;
+        if (Guid.TryParse(id, out var parsedUserId))
+        {
+            userId = new Domain.Entities.UserId(parsedUserId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        var roles = await this.QueryForCurrentUser(cancellationToken).User.GetRoles(userId);
+        return Ok(roles);
+    }
+
+    /// <summary>
+    /// Unasign application role from user
+    /// </summary>
+    /// <param name="id">User identifier</param>
+    /// <param name="roleId">Application role id to unassign</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>User application roles</returns>
+    [HttpDelete("{id}/role/{roleId}", Name = "UnassignUserRole")]
+    public async Task<IActionResult> UnassignUserRole(string id, string roleId, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(UnassignUserRole));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(roleId))
+        {
+            return BadRequest($"{nameof(roleId)} must have a value");
+        }
+
+        Domain.Entities.UserId userId;
+        if (Guid.TryParse(id, out var parsedUserId))
+        {
+            userId = new Domain.Entities.UserId(parsedUserId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        Domain.Entities.ApplicationRoleId applicationRoleId;
+        if (Guid.TryParse(roleId, out var parsedApplicationRoleId))
+        {
+            applicationRoleId = new Domain.Entities.ApplicationRoleId(parsedApplicationRoleId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(roleId)} has a wrong format '{roleId}'");
+        }
+
+        var roles = await this.CommandForCurrentUser(cancellationToken).User.RemoveRole(userId, applicationRoleId);
+        return Ok(roles);
+    }
 }

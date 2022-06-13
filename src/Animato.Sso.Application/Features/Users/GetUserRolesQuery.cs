@@ -10,41 +10,39 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-public class GetUserByUserNameQuery : IRequest<User>
+public class GetUserRolesQuery : IRequest<IEnumerable<ApplicationRole>>
 {
-    public GetUserByUserNameQuery(string userName, ClaimsPrincipal user)
+    public GetUserRolesQuery(UserId id, ClaimsPrincipal user)
     {
-        UserName = userName;
+        Id = id;
         User = user;
     }
 
-    public string UserName { get; }
+    public UserId Id { get; }
     public ClaimsPrincipal User { get; }
 
-    public class GetUserByUserNameQueryValidator : AbstractValidator<GetUserByUserNameQuery>
+    public class GetUserRolesQueryValidator : AbstractValidator<GetUserRolesQuery>
     {
-        public GetUserByUserNameQueryValidator()
-            => RuleFor(v => v.UserName).NotNull().WithMessage(v => $"{nameof(v.UserName)} must have a value");
-
+        public GetUserRolesQueryValidator() => RuleFor(v => v.Id).NotNull().WithMessage(v => $"{nameof(v.Id)} must have a value");
     }
 
-    public class GetUserByUserNameQueryHandler : IRequestHandler<GetUserByUserNameQuery, User>
+    public class GetUserRolesQueryHandler : IRequestHandler<GetUserRolesQuery, IEnumerable<ApplicationRole>>
     {
         private readonly IUserRepository userRepository;
-        private readonly ILogger<GetUserByUserNameQueryHandler> logger;
+        private readonly ILogger<GetUserRolesQueryHandler> logger;
         private const string ERROR_LOADING_USERS = "Error loading users";
 
-        public GetUserByUserNameQueryHandler(IUserRepository userRepository, ILogger<GetUserByUserNameQueryHandler> logger)
+        public GetUserRolesQueryHandler(IUserRepository userRepository, ILogger<GetUserRolesQueryHandler> logger)
         {
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.logger = logger;
         }
 
-        public async Task<User> Handle(GetUserByUserNameQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<ApplicationRole>> Handle(GetUserRolesQuery request, CancellationToken cancellationToken)
         {
             try
             {
-                return await userRepository.GetUserByLogin(request.UserName, cancellationToken);
+                return await userRepository.GetUserRoles(request.Id, cancellationToken);
             }
             catch (Exception exception)
             {

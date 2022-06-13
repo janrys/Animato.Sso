@@ -29,4 +29,7 @@ public interface IUserRepository
     Task<User> Create(User user, CancellationToken cancellationToken);
     Task<User> Update(User user, CancellationToken cancellationToken);
     Task<IEnumerable<User>> GetUserByRole(ApplicationRoleId roleId);
+    Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId userId, CancellationToken cancellationToken);
+    Task AddUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken);
+    Task RemoveUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken);
 }

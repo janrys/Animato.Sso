@@ -10,41 +10,39 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-public class GetUserByUserNameQuery : IRequest<User>
+public class GetUserByIdQuery : IRequest<User>
 {
-    public GetUserByUserNameQuery(string userName, ClaimsPrincipal user)
+    public GetUserByIdQuery(UserId id, ClaimsPrincipal user)
     {
-        UserName = userName;
+        Id = id;
         User = user;
     }
 
-    public string UserName { get; }
+    public UserId Id { get; }
     public ClaimsPrincipal User { get; }
 
-    public class GetUserByUserNameQueryValidator : AbstractValidator<GetUserByUserNameQuery>
+    public class GetUserByIdQueryValidator : AbstractValidator<GetUserByIdQuery>
     {
-        public GetUserByUserNameQueryValidator()
-            => RuleFor(v => v.UserName).NotNull().WithMessage(v => $"{nameof(v.UserName)} must have a value");
-
+        public GetUserByIdQueryValidator() => RuleFor(v => v.Id).NotNull().WithMessage(v => $"{nameof(v.Id)} must have a value");
     }
 
-    public class GetUserByUserNameQueryHandler : IRequestHandler<GetUserByUserNameQuery, User>
+    public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, User>
     {
         private readonly IUserRepository userRepository;
-        private readonly ILogger<GetUserByUserNameQueryHandler> logger;
+        private readonly ILogger<GetUserByIdQueryHandler> logger;
         private const string ERROR_LOADING_USERS = "Error loading users";
 
-        public GetUserByUserNameQueryHandler(IUserRepository userRepository, ILogger<GetUserByUserNameQueryHandler> logger)
+        public GetUserByIdQueryHandler(IUserRepository userRepository, ILogger<GetUserByIdQueryHandler> logger)
         {
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.logger = logger;
         }
 
-        public async Task<User> Handle(GetUserByUserNameQuery request, CancellationToken cancellationToken)
+        public async Task<User> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
         {
             try
             {
-                return await userRepository.GetUserByLogin(request.UserName, cancellationToken);
+                return await userRepository.GetById(request.Id, cancellationToken);
             }
             catch (Exception exception)
             {

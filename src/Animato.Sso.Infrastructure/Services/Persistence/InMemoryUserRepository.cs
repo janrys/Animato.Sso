@@ -156,4 +156,71 @@ public class InMemoryUserRepository : IUserRepository
             throw;
         }
     }
+
+    public Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(dataContext.UserApplicationRoles.Where(r => r.UserId == userId)
+                .Join(dataContext.ApplicationRoles, r => r.ApplicationRoleId, ar => ar.Id, (r, ar) => ar));
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, ERROR_LOADING_USERS);
+            throw;
+        }
+    }
+
+    public async Task AddUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            dataContext.UserApplicationRoles.Add(new UserApplicationRole()
+            {
+                UserId = userId,
+                ApplicationRoleId = roleId,
+            });
+            await UpdateUserLastChange(userId, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, ERROR_UPDATING_USERS);
+            throw;
+        }
+    }
+
+    public async Task RemoveUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            dataContext.UserApplicationRoles.RemoveAll(r => r.UserId == userId && r.ApplicationRoleId == roleId);
+            await UpdateUserLastChange(userId, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, ERROR_UPDATING_USERS);
+            throw;
+        }
+    }
+
+    private Task UpdateUserLastChange(UserId userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var user = dataContext.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user is not null)
+            {
+                user.LastChanged = DateTime.UtcNow;
+            }
+
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, ERROR_UPDATING_USERS);
+            throw;
+        }
+    }
 }

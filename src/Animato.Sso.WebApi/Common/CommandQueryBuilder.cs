@@ -25,6 +25,8 @@ public interface IUserCommandBuilder
     Task<User> Create(CreateUserModel user);
     Task<User> Update(UserId userID, CreateUserModel user);
     Task Delete(UserId userID);
+    Task<IEnumerable<ApplicationRole>> RemoveRole(UserId userId, ApplicationRoleId roleId);
+    Task<IEnumerable<ApplicationRole>> AddRole(UserId userId, ApplicationRoleId roleId);
 }
 
 public interface ITokenCommandBuilder
@@ -55,6 +57,7 @@ public interface IUserQueryBuilder
     Task<IEnumerable<User>> GetAll();
     Task<User> GetByLogin(string login);
     Task<User> GetById(UserId id);
+    Task<IEnumerable<ApplicationRole>> GetRoles(UserId userId);
 }
 
 public interface ITokenQueryBuilder
@@ -164,4 +167,12 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
 
     Task IApplicationCommandBuilder.DeleteRole(ApplicationRoleId roleId)
         => mediator.Send(new DeleteApplicationRoleCommand(roleId, user), cancellationToken);
+    Task<IEnumerable<ApplicationRole>> IUserCommandBuilder.RemoveRole(UserId userId, ApplicationRoleId roleId)
+        => mediator.Send(new RemoveUserRoleCommand(userId, roleId, user), cancellationToken);
+
+    Task<IEnumerable<ApplicationRole>> IUserCommandBuilder.AddRole(UserId userId, ApplicationRoleId roleId)
+        => mediator.Send(new AddUserRoleCommand(userId, roleId, user), cancellationToken);
+    Task<IEnumerable<ApplicationRole>> IUserQueryBuilder.GetRoles(UserId userId)
+        => mediator.Send(new GetUserRolesQuery(userId, user), cancellationToken);
+
 }

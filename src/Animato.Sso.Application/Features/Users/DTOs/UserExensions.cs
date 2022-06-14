@@ -29,9 +29,14 @@ public static class UserExensions
             user.Password = model.Password;
         }
 
-        if (model.AuthorizationType is not null)
+        if (!string.IsNullOrEmpty(model.TotpSecretKey))
         {
-            user.AuthorizationType = model.AuthorizationType;
+            user.TotpSecretKey = model.TotpSecretKey;
+        }
+
+        if (model.AuthorizationMethod is not null)
+        {
+            user.AuthorizationMethod = model.AuthorizationMethod;
         }
 
         user.IsDeleted = model.IsDeleted ?? user.IsDeleted;
@@ -55,14 +60,19 @@ public static class UserExensions
             user.Password = tokenFactory.GenerateRandomString(oidcOptions.UserPasswordLength);
         }
 
+        if (string.IsNullOrEmpty(user.TotpSecretKey))
+        {
+            user.TotpSecretKey = tokenFactory.GenerateRandomString(oidcOptions.TotpSecretLength);
+        }
+
         if (string.IsNullOrEmpty(user.FullName))
         {
             user.FullName = user.Login;
         }
 
-        if (user.AuthorizationType is null)
+        if (user.AuthorizationMethod is null)
         {
-            user.AuthorizationType = Domain.Enums.AuthorizationType.Password;
+            user.AuthorizationMethod = Domain.Enums.AuthorizationMethod.Password;
         }
 
         if (!user.IsDeleted.HasValue)

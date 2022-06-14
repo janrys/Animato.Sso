@@ -11,4 +11,5 @@ public class OidcOptions
     public string Issuer { get; set; } = "Animato.Sso";
     public int RefreshTokenLength { get; set; } = 60;
     public int UserPasswordLength { get; set; } = 10;
+    public int TotpSecretLength { get; set; } = 20;
 }

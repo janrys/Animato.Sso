@@ -32,7 +32,7 @@ public class PerformanceBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequ
         if (elapsedMilliseconds > TOO_LONG_LIMIT_MS)
         {
             var requestName = typeof(TRequest).Name;
-            var userId = currentUserService.GetUser()?.GetUserId() ?? string.Empty;
+            var userId = currentUserService.GetUser()?.GetUserId().Value.ToString() ?? string.Empty;
             var userName = currentUserService.GetUser()?.GetUserName() ?? string.Empty;
             logger.LogWarning("Long Running Request: {Name} ({ElapsedMilliseconds} milliseconds) {UserId} {UserName} {Request}",
                 requestName, elapsedMilliseconds, userId, userName, request);

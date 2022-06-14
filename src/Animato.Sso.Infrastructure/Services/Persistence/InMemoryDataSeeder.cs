@@ -21,6 +21,9 @@ public class InMemoryDataSeeder : IDataSeeder
     private Application testAplication;
     private Application crmAplication;
 
+    private static readonly Guid AdminUserId = Guid.Parse("551845DC-0000-0000-0000-F401AF408965");
+    private static readonly Guid TesterUserId = Guid.Parse("661845DC-0000-0000-0000-F401AF408966");
+
     public InMemoryDataSeeder(InMemoryDataContext dataContext, IPasswordHasher passwordHasher, OidcOptions oidcOptions
         , ILogger<InMemoryDataSeeder> logger)
     {
@@ -132,7 +135,7 @@ public class InMemoryDataSeeder : IDataSeeder
             AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
             RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
             Use2Fa = false,
-            AuthorizationType = AuthorizationType.Password
+            AuthorizationMethod = AuthorizationMethod.Password
         };
         dataContext.Applications.Add(application);
         testAplication = application;
@@ -147,7 +150,7 @@ public class InMemoryDataSeeder : IDataSeeder
             AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
             RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
             Use2Fa = false,
-            AuthorizationType = AuthorizationType.Password
+            AuthorizationMethod = AuthorizationMethod.Password
         };
         dataContext.Applications.Add(application);
         crmAplication = application;
@@ -162,7 +165,7 @@ public class InMemoryDataSeeder : IDataSeeder
             AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
             RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
             Use2Fa = false,
-            AuthorizationType = AuthorizationType.Password
+            AuthorizationMethod = AuthorizationMethod.Password
         };
         dataContext.Applications.Add(application);
 
@@ -173,12 +176,13 @@ public class InMemoryDataSeeder : IDataSeeder
     {
         var user = new User()
         {
-            Id = UserId.New(),
+            Id = new UserId(TesterUserId),
             Login = "tester@animato.cz",
             Name = "Tester",
             FullName = "Tester Tester",
-            AuthorizationType = AuthorizationType.Password,
+            AuthorizationMethod = AuthorizationMethod.Password,
             LastChanged = DateTime.UtcNow,
+            TotpSecretKey = TesterUserId.ToString(),
         };
         user.UpdatePasswordAndHash(passwordHasher, "testpass");
         dataContext.Users.Add(user);
@@ -186,12 +190,13 @@ public class InMemoryDataSeeder : IDataSeeder
 
         user = new User()
         {
-            Id = UserId.New(),
+            Id = new UserId(AdminUserId),
             Login = "admin@animato.cz",
             Name = "Admin",
             FullName = "Admin Admin",
-            AuthorizationType = AuthorizationType.Password,
+            AuthorizationMethod = AuthorizationMethod.TotpQrCode,
             LastChanged = DateTime.UtcNow,
+            TotpSecretKey = AdminUserId.ToString()
         };
         user.UpdatePasswordAndHash(passwordHasher, "adminpass");
         dataContext.Users.Add(user);

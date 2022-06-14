@@ -4,6 +4,8 @@ using System.Security.Claims;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Models;
+using Animato.Sso.Application.Security;
+using Animato.Sso.Domain.Entities;
 using Animato.Sso.Domain.Enums;
 using Animato.Sso.WebApi.Extensions;
 using Animato.Sso.WebApi.Models;
@@ -61,11 +63,7 @@ public class OidcController : ApiControllerBase
 
         if (!User.Identity.IsAuthenticated)
         {
-            var routeValuesDictionary = new RouteValueDictionary
-            {
-                { "from", $"{Request.Path}{Request.QueryString}" }
-            };
-            return RedirectToRoute("Login", routeValuesDictionary);
+            return RedirectToLoginWithBackRedirect();
         }
 
         var authorizationResult = await this.CommandForCurrentUser(cancellationToken).User.Authorize(authorizationRequest);
@@ -103,35 +101,34 @@ public class OidcController : ApiControllerBase
     {
         logger.LogDebug("Executing action {Action}", nameof(Login));
         var fileContents = await System.IO.File.ReadAllTextAsync("./Content/Authorize.html", cancellationToken);
-
+        string userName;
 
         if (User.Identity.IsAuthenticated)
         {
+            var user = await this.QueryForCurrentUser(cancellationToken).User.GetById(User.GetUserId());
             var lastChanged = User.Claims.FirstOrDefault(c => c.Type == "last_changed")?.Value;
 
             if (!DateTime.TryParse(lastChanged, DefaultOptions.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
-                || lastChangedParsed <= DateTime.UtcNow.AddMinutes(-1))
+                || DateTime.SpecifyKind(lastChangedParsed, DateTimeKind.Utc) < user.LastChanged.AddSeconds(-1))
             {
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 return LocalRedirect(Url.GetLocalUrl(Request.Query["from"].ToString() ?? "/login"));
             }
-        }
 
-        string userName;
-        if (User.Identity.IsAuthenticated)
-        {
-            userName = User.Identity.Name;
+            if (user.AuthorizationMethod != AuthorizationMethod.TotpQrCode)
+            {
+                return LocalRedirect(Url.GetLocalUrl(Request.Query["from"]));
+            }
 
-            var qrCodeInfo = authenticator.GenerateCode(userName, "secretkey");
-            var qrCodeImageUrl = qrCodeInfo.ImageUrl;
-            var manualEntrySetupCode = qrCodeInfo.ManualKey;
-            fileContents = fileContents.Replace("***manual2facode***", manualEntrySetupCode);
-            fileContents = fileContents.Replace("***qrcodeUrl***", qrCodeImageUrl);
+            userName = user.Login;
+
+            fileContents = RemovePasswordBlock(fileContents);
         }
         else
         {
-            userName = "not authenticated";
+            userName = "-";
         }
+        fileContents = RemoveTotpBlock(fileContents);
         fileContents = fileContents.Replace("***username***", userName);
         fileContents = fileContents.Replace("***redirectUrl***", Request.Query["from"]);
 
@@ -140,6 +137,29 @@ public class OidcController : ApiControllerBase
             Content = fileContents,
             ContentType = "text/html"
         };
+    }
+
+    private string RemoveTotpBlock(string fileContents)
+        => RemoveBlock(fileContents, "***totpblockstart***", "***totpblockend***")
+        .Replace("***passwordblockstart***", "")
+        .Replace("***passwordblockend***", "");
+
+    private string RemovePasswordBlock(string fileContents)
+        => RemoveBlock(fileContents, "***passwordblockstart***", "***passwordblockend***")
+        .Replace("***totpblockstart***", "")
+        .Replace("***totpblockend***", "");
+
+    private string RemoveBlock(string fileContents, string startAnchor, string endAnchor)
+    {
+        var start = fileContents.IndexOf(startAnchor, StringComparison.OrdinalIgnoreCase);
+        var end = fileContents.IndexOf(endAnchor, StringComparison.OrdinalIgnoreCase) + endAnchor.Length;
+
+        if (start >= 0 && end >= 0)
+        {
+            return fileContents.Remove(start, end - start);
+        }
+
+        return fileContents;
     }
 
     /// <summary>
@@ -155,6 +175,8 @@ public class OidcController : ApiControllerBase
     {
         logger.LogDebug("Executing action {Action}", nameof(AuthorizeInteractive));
 
+        User user = null;
+        var authorizationMethod = AuthorizationMethod.Unknown;
 
         if (loginModel.Action.Equals("logout", StringComparison.OrdinalIgnoreCase))
         {
@@ -162,7 +184,21 @@ public class OidcController : ApiControllerBase
         }
         else if (loginModel.Action.Equals("validateQrCode", StringComparison.OrdinalIgnoreCase))
         {
-            var result = authenticator.ValidatePin("secretkey", loginModel.QrCode);
+            user = await this.QueryForCurrentUser(cancellationToken).User.GetById(User.GetUserId());
+
+            if (user is null)
+            {
+                return Forbid();
+            }
+
+            var result = authenticator.ValidatePin(user.TotpSecretKey, loginModel.QrCode);
+
+            if (!result)
+            {
+                return Forbid();
+            }
+
+            authorizationMethod = AuthorizationMethod.TotpQrCode;
         }
         else
         {
@@ -171,32 +207,114 @@ public class OidcController : ApiControllerBase
                 return Forbid();
             }
 
-            var user = await this.Command(cancellationToken).User.Login(loginModel.UserName, loginModel.Password);
+            user = await this.Command(cancellationToken).User.Login(loginModel.UserName, loginModel.Password);
 
             if (user is null)
             {
                 return Forbid();
             }
 
-            var claims = claimFactory.GenerateClaims(user);
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            authorizationMethod = AuthorizationMethod.Password;
+        }
 
-            var authProperties = new AuthenticationProperties
+        var claims = claimFactory.GenerateClaims(user, authorizationMethod);
+        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+        var authProperties = new AuthenticationProperties
+        {
+            AllowRefresh = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
+            IsPersistent = true,
+            IssuedUtc = DateTimeOffset.UtcNow,
+            RedirectUri = "\\login"
+        };
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(claimsIdentity),
+            authProperties);
+
+        if (user.AuthorizationMethod == AuthorizationMethod.TotpQrCode && authorizationMethod == AuthorizationMethod.Password)
+        {
+            var routeValuesDictionary = new RouteValueDictionary
             {
-                AllowRefresh = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
-                IsPersistent = true,
-                IssuedUtc = DateTimeOffset.UtcNow,
-                RedirectUri = "\\login"
+                { "from", loginModel.RedirectUrl }
             };
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties);
+            return RedirectToRoute("Login", routeValuesDictionary);
         }
 
         return LocalRedirect(Url.GetLocalUrl(loginModel.RedirectUrl ?? "/login"));
+    }
+
+    /// <summary>
+    /// Interactive user information
+    /// </summary>
+    /// <param name="authenticator"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns></returns>
+    [HttpGet("login/me", Name = "AboutMe")]
+    public async Task<IActionResult> AboutMe([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(Login));
+
+        if (!User.Identity.IsAuthenticated)
+        {
+            return RedirectToLoginWithBackRedirect();
+        }
+
+        var userId = User.GetUserId();
+
+        if (userId == UserId.Empty)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToLoginWithBackRedirect();
+        }
+
+        var user = await this.QueryForCurrentUser(cancellationToken).User.GetById(userId);
+
+        if (user == null)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToLoginWithBackRedirect();
+        }
+
+        var lastChanged = User.Claims.FirstOrDefault(c => c.Type == "last_changed")?.Value;
+        if (!DateTime.TryParse(lastChanged, DefaultOptions.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
+            || DateTime.SpecifyKind(lastChangedParsed, DateTimeKind.Utc) < user.LastChanged.AddSeconds(-1))
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToLoginWithBackRedirect();
+        }
+
+        var fileContents = await System.IO.File.ReadAllTextAsync("./Content/AboutMe.html", cancellationToken);
+        fileContents = fileContents.Replace("***username***", user.Login);
+        fileContents = fileContents.Replace("***name***", user.Name);
+        fileContents = fileContents.Replace("***fullname***", user.FullName);
+        fileContents = fileContents.Replace("***id***", user.Id.ToString());
+        fileContents = fileContents.Replace("***authorizationType***", user.AuthorizationMethod.Name);
+        fileContents = fileContents.Replace("***isBlocked***", user.IsBlocked.ToString());
+        fileContents = fileContents.Replace("***isDeleted***", user.IsDeleted.ToString());
+
+        var qrCodeInfo = authenticator.GenerateCode(user.Login, user.TotpSecretKey);
+        var qrCodeImageUrl = qrCodeInfo.ImageUrl;
+        var manualEntrySetupCode = qrCodeInfo.ManualKey;
+        fileContents = fileContents.Replace("***manual2facode***", manualEntrySetupCode);
+        fileContents = fileContents.Replace("***qrcodeUrl***", qrCodeImageUrl);
+
+        return new ContentResult
+        {
+            Content = fileContents,
+            ContentType = "text/html"
+        };
+    }
+
+    private IActionResult RedirectToLoginWithBackRedirect()
+    {
+        var routeValuesDictionary = new RouteValueDictionary
+            {
+                { "from", $"{Request.Path}{Request.QueryString}" }
+            };
+        return RedirectToRoute("Login", routeValuesDictionary);
     }
 
     /// <summary>

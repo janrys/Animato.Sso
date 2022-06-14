@@ -18,7 +18,7 @@ public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest> where T
     public Task Process(TRequest request, CancellationToken cancellationToken)
     {
         var requestName = typeof(TRequest).Name;
-        var userId = currentUserService.GetUser()?.GetUserId() ?? string.Empty;
+        var userId = currentUserService.GetUser()?.GetUserId().Value.ToString() ?? string.Empty;
         var userName = currentUserService.GetUser()?.GetUserName() ?? string.Empty;
         logger.LogInformation("Request: {RequestName} {UserId} {UserName} {Request}", requestName, userId, userName, request);
         return Task.CompletedTask;

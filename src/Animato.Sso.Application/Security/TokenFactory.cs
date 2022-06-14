@@ -9,6 +9,7 @@ using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
+using Animato.Sso.Domain.Enums;
 using Microsoft.IdentityModel.Tokens;
 using SecurityClaims = System.Security.Claims;
 
@@ -52,7 +53,7 @@ public class TokenFactory : ITokenFactory
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(oidcOptions.SecretKey);
-        var claims = new List<SecurityClaims.Claim>(claimFactory.GenerateClaims(user, roles))
+        var claims = new List<SecurityClaims.Claim>(claimFactory.GenerateClaims(user, AuthorizationMethod.Unknown, roles))
         {
             new SecurityClaims.Claim("login", user.Login)
         };

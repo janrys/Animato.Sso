@@ -6,11 +6,16 @@ using System.Security.Claims;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Domain.Entities;
+using Animato.Sso.Domain.Enums;
 using SecurityClaims = System.Security.Claims;
 
 public class ClaimFactory : IClaimFactory
 {
-    public IEnumerable<SecurityClaims.Claim> GenerateClaims(User user, params ApplicationRole[] roles)
+
+    public IEnumerable<SecurityClaims.Claim> GenerateClaims(User user, AuthorizationMethod authorizationMethod, params ApplicationRole[] roles)
+        => GenerateClaims(user, new AuthorizationMethod[] { authorizationMethod }, roles);
+
+    public IEnumerable<SecurityClaims.Claim> GenerateClaims(User user, IEnumerable<AuthorizationMethod> authorizationMethods, params ApplicationRole[] roles)
     {
         if (user is null)
         {
@@ -30,7 +35,11 @@ public class ClaimFactory : IClaimFactory
         if (roles is not null && roles.Any())
         {
             claims.AddRange(roles.Select(r => new SecurityClaims.Claim(ClaimTypes.Role, r.Name)));
+        }
 
+        if (authorizationMethods is not null && authorizationMethods.Any())
+        {
+            claims.AddRange(authorizationMethods.Select(r => new SecurityClaims.Claim(ClaimTypes.AuthenticationMethod, r.Name)));
         }
 
         return claims;

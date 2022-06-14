@@ -11,7 +11,7 @@ public static class ApplicationExensions
     {
         application.Name = model.Name;
         application.Code = model.Code;
-        application.AuthorizationType = model.AuthorizationType;
+        application.AuthorizationMethod = model.AuthorizationMethod;
         application.AccessTokenExpirationMinutes = model.AccessTokenExpirationMinutes.Value;
         application.RefreshTokenExpirationMinutes = model.RefreshTokenExpirationMinutes.Value;
         application.RedirectUris = model.RedirectUris;
@@ -49,9 +49,9 @@ public static class ApplicationExensions
             application.RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes;
         }
 
-        if (application.AuthorizationType is null)
+        if (application.AuthorizationMethod is null)
         {
-            application.AuthorizationType = Domain.Enums.AuthorizationType.Password;
+            application.AuthorizationMethod = Domain.Enums.AuthorizationMethod.Password;
         }
 
         return application;

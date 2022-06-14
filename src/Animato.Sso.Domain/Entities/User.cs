@@ -13,7 +13,8 @@ public class User
     public string Login { get; set; }
     public string Salt { get; set; }
     public string Password { get; set; }
-    public AuthorizationType AuthorizationType { get; set; }
+    public string TotpSecretKey { get; set; }
+    public AuthorizationMethod AuthorizationMethod { get; set; }
     public DateTime LastChanged { get; set; }
     public bool IsDeleted { get; set; } = false;
     public bool IsBlocked { get; set; } = false;

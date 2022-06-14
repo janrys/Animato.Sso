@@ -13,5 +13,5 @@ public class CreateApplicationModel
     public int? RefreshTokenExpirationMinutes { get; set; }
     public bool Use2Fa { get; set; }
 
-    public AuthorizationType AuthorizationType { get; set; }
+    public AuthorizationMethod AuthorizationMethod { get; set; }
 }

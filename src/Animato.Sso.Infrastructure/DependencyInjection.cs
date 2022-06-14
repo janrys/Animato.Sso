@@ -17,7 +17,10 @@ public static class DependencyInjection
     {
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-        services.AddInMemoryPersistence();
+        if (configuration["Database"].Equals("inmemory", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddInMemoryPersistence();
+        }
 
         var qrCodeAuthenticatorOptions = new GoogleQrCodeTotpAuthenticatorOptions();
         configuration.Bind(GoogleQrCodeTotpAuthenticatorOptions.CONFIGURATION_KEY, qrCodeAuthenticatorOptions);

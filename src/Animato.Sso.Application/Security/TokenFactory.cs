@@ -51,6 +51,7 @@ public class TokenFactory : ITokenFactory
 
     public string GenerateAccessToken(User user, Application application, params ApplicationRole[] roles)
     {
+        //JwtRegisteredClaimNames
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(oidcOptions.SecretKey);
         var claims = new List<SecurityClaims.Claim>(claimFactory.GenerateClaims(user, AuthorizationMethod.Unknown, roles))
@@ -62,6 +63,7 @@ public class TokenFactory : ITokenFactory
         {
             Issuer = metadataService.GetIssuer(),
             NotBefore = DateTime.UtcNow,
+            IssuedAt = DateTime.Now,
             Audience = application.Code,
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
@@ -72,7 +74,29 @@ public class TokenFactory : ITokenFactory
     }
 
 
-    public string GenerateIdToken(User user, Application application, params ApplicationRole[] roles) => throw new NotImplementedException();
+    public string GenerateIdToken(User user, Application application, params ApplicationRole[] roles)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(oidcOptions.SecretKey);
+        var claims = new List<SecurityClaims.Claim>(claimFactory.GenerateClaims(user, AuthorizationMethod.Unknown, roles))
+        {
+            new SecurityClaims.Claim("login", user.Login),
+            new SecurityClaims.Claim(JwtRegisteredClaimNames.AuthTime, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(DefaultOptions.Culture)),
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Issuer = metadataService.GetIssuer(),
+            NotBefore = DateTime.UtcNow,
+            IssuedAt = DateTime.UtcNow,
+            Audience = application.Code,
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+        };
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
 
     public string GenerateRefreshToken(User user) => GenerateRandomString(oidcOptions.RefreshTokenLength);
     public TokenInfo GetTokenInfo(string token)

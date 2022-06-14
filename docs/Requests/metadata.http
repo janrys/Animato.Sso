@@ -1,0 +1,31 @@
+﻿# https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+# https://blog.bitsrc.io/vs-codes-rest-client-plugin-is-all-you-need-to-make-api-calls-e9e95fcfd85a
+@baseUrl = https://animato-sso-dev-api.azurewebsites.net
+
+# @name getConfiguration 
+GET {{baseUrl}}/.well-known/openid-configuration
+
+###
+
+GET {{baseUrl}}/authorize?response_type=token&client_id=animato:crm&redirect_uri=https://crm.animato.cz
+
+###
+# @rest-client.followredirect [false]
+
+POST {{baseUrl}}/authorize/interactive
+Content-Type: application/x-www-form-urlencoded
+
+redirectUrl=%2Fauthorize%3Fresponse_type%3Dtoken%26client_id%3Danimato%3Acrm%26redirect_uri%3Dhttps%3A%2F%2Fcrm.animato.cz&userName=tester%40animato.cz&password=testpass&action=login
+
+
+###
+# @rest-client.followredirect [false]
+
+GET {{baseUrl}}/authorize?response_type=token&client_id=animato:crm&redirect_uri=https://crm.animato.cz
+
+
+###
+# @name authorizeCodeFlow 
+# @rest-client.followredirect [false]
+
+GET {{baseUrl}}/authorize?response_type=code&client_id=animato:crm&redirect_uri=https://crm.animato.cz

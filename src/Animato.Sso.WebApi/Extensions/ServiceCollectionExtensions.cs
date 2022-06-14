@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
+using Serilog;
+using Serilog.Events;
 
 public static class ServiceCollectionExtensions
 {
@@ -23,8 +25,17 @@ public static class ServiceCollectionExtensions
             .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables();
 
-    public static ILoggingBuilder AddCustomLogging(this ILoggingBuilder builder)
-        => builder.ClearProviders().AddConsole();
+    public static WebApplicationBuilder AddCustomLogging(this WebApplicationBuilder builder)
+    {
+        builder.Logging.ClearProviders();
+        builder.Host.UseSerilog((context, services, configuration) => configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                    .Enrich.FromLogContext()
+                    .WriteTo.Async(a => a.Console()));
+        return builder;
+    }
 
     public static IServiceCollection AddCustomProblemDetails(this IServiceCollection services)
     {

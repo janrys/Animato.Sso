@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
 using FluentValidation;
@@ -30,7 +31,6 @@ public class GetUserByIdQuery : IRequest<User>
     {
         private readonly IUserRepository userRepository;
         private readonly ILogger<GetUserByIdQueryHandler> logger;
-        private const string ERROR_LOADING_USERS = "Error loading users";
 
         public GetUserByIdQueryHandler(IUserRepository userRepository, ILogger<GetUserByIdQueryHandler> logger)
         {
@@ -46,8 +46,8 @@ public class GetUserByIdQuery : IRequest<User>
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, ERROR_LOADING_USERS);
-                throw new DataAccessException(ERROR_LOADING_USERS, exception);
+                logger.UsersLoadingError(exception);
+                throw new DataAccessException("Error loading users", exception);
             }
         }
     }

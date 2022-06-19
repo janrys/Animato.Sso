@@ -36,7 +36,7 @@ Data in test environment are refreshed after each restart.
 
 ## Configuration
 
-
+Get basic information about SSO service settings, endpoints, certificates
 ```js
 GET {{baseUrl}}/.well-known/openid-configuration
 ```
@@ -141,6 +141,8 @@ Id token contains personal data for authorized user.
 Refresh token is long term token used to get new access token after it's expiration without need to user login.
 
 ## Token status
+Check and validate token. Receive decoded information.
+
 ```js
 POST {{baseUrl}}/token-info
 
@@ -170,6 +172,8 @@ Invalid token
 ```
 
 ## Refresh token
+Use long life refresh token to get new access token after it's expiration without need to new user login.
+
 ```js
 POST {{baseUrl}}/token-info
 
@@ -190,6 +194,8 @@ POST {{baseUrl}}/token-info
 ```
 
 ## Revoke token
+Invalidate token. Invalidated token cannot be used for future authorization.
+
 ```js
 POST {{baseUrl}}/revoke
 

@@ -14,4 +14,5 @@ public interface IApplicationRepository
     Task<Application> Create(Application application, CancellationToken cancellationToken);
     Task<Application> Update(Application application, CancellationToken cancellationToken);
     Task Delete(ApplicationId applicationId, CancellationToken cancellationToken);
+    Task Clear(CancellationToken cancellationToken);
 }

@@ -1,13 +1,16 @@
-namespace Animato.Sso.Infrastructure.Azure.Services.Persistence;
+namespace Animato.Sso.Infrastructure.AzureStorage.Services.Persistence;
 
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Exceptions;
-using global::Azure;
-using global::Azure.Data.Tables;
+using Azure;
+using Azure.Data.Tables;
 using Microsoft.Extensions.Logging;
 
+/// <summary>
+/// https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model
+/// </summary>
 public class AzureTableStorageDataContext
 {
     private readonly AzureTableStorageOptions options;
@@ -69,23 +72,28 @@ public class AzureTableStorageDataContext
     /// </summary>
     /// <param name="tableClient">The authenticated TableClient</param>
     /// <returns></returns>
-    public static async Task DeleteAllEntitiesAsync(TableClient tableClient)
+    public static async Task DeleteAllEntitiesAsync(TableClient tableClient, CancellationToken cancellationToken)
     {
         // Only the PartitionKey & RowKey fields are required for deletion
         var entities = tableClient
-            .QueryAsync<TableEntity>(select: new List<string>() { "PartitionKey", "RowKey" }, maxPerPage: 1000);
+            .QueryAsync<TableEntity>(select: new List<string>() { "PartitionKey", "RowKey" }, maxPerPage: 1000, cancellationToken: cancellationToken);
 
         await entities.AsPages().ForEachAwaitAsync(async page =>
         // Since we don't know how many rows the table has and the results are ordered by PartitonKey+RowKey
         // we'll delete each page immediately and not cache the whole table in memory
-            await BatchManipulateEntities(tableClient, page.Values, TableTransactionActionType.Delete).ConfigureAwait(false));
+            await BatchManipulateEntities(tableClient, page.Values, TableTransactionActionType.Delete, cancellationToken)
+            .ConfigureAwait(false)
+            , cancellationToken: cancellationToken);
     }
 
     /// <summary>
     /// Groups entities by PartitionKey into batches of max 100 for valid transactions
     /// </summary>
     /// <returns>List of Azure Responses for Transactions</returns>
-    public static async Task<List<Response<IReadOnlyList<Response>>>> BatchManipulateEntities<T>(TableClient tableClient, IEnumerable<T> entities, TableTransactionActionType tableTransactionActionType) where T : class, ITableEntity, new()
+    public static async Task<List<Response<IReadOnlyList<Response>>>> BatchManipulateEntities<T>(TableClient tableClient
+        , IEnumerable<T> entities
+        , TableTransactionActionType tableTransactionActionType
+        , CancellationToken cancellationToken) where T : class, ITableEntity, new()
     {
         var groups = entities.GroupBy(x => x.PartitionKey);
         var responses = new List<Response<IReadOnlyList<Response>>>();
@@ -100,7 +108,8 @@ public class AzureTableStorageDataContext
 
                 actions = new List<TableTransactionAction>();
                 actions.AddRange(batch.Select(e => new TableTransactionAction(tableTransactionActionType, e)));
-                var response = await tableClient.SubmitTransactionAsync(actions).ConfigureAwait(false);
+                var response = await tableClient.SubmitTransactionAsync(actions, cancellationToken)
+                    .ConfigureAwait(false);
                 responses.Add(response);
             }
         }

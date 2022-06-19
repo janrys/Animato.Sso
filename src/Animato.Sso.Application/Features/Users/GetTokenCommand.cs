@@ -187,7 +187,7 @@ public class GetTokenCommand : IRequest<TokenResult>
                 AccessToken = accessToken.Value
             };
 
-            await tokenRepository.Insert(accessToken, cancellationToken);
+            await tokenRepository.Create(accessToken, cancellationToken);
 
             tokenResult.ExpiresIn = (int)accessToken.Expiration.Subtract(DateTime.UtcNow).TotalSeconds;
             return tokenResult;
@@ -215,15 +215,26 @@ public class GetTokenCommand : IRequest<TokenResult>
                 UserId = user.Id
             };
 
+            var idToken = new Token()
+            {
+                Value = tokenFactory.GenerateIdToken(user, application, userRoles.ToArray()),
+                ApplicationId = application.Id,
+                Created = DateTime.UtcNow,
+                Expiration = DateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
+                TokenType = TokenType.Id,
+                UserId = user.Id
+            };
+
             var tokenResult = new TokenResult()
             {
                 IsAuthorized = true,
                 GrantType = GrantType.Code,
                 AccessToken = accessToken.Value,
-                RefreshToken = refreshToken.Value
+                RefreshToken = refreshToken.Value,
+                IdToken = idToken.Value,
             };
 
-            await tokenRepository.Insert(accessToken, refreshToken, cancellationToken);
+            await tokenRepository.Create(accessToken, refreshToken, idToken, cancellationToken);
 
             tokenResult.ExpiresIn = (int)accessToken.Expiration.Subtract(DateTime.UtcNow).TotalSeconds;
             tokenResult.RefreshTokenExpiresIn = (int)refreshToken.Expiration.Subtract(DateTime.UtcNow).TotalSeconds;

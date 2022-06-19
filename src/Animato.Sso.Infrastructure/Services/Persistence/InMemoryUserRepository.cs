@@ -5,46 +5,65 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
 public class InMemoryUserRepository : IUserRepository
 {
-    private const string ERROR_LOADING_USERS = "Error loading users";
-    private const string ERROR_INSERTING_USERS = "Error inserting users";
-    private const string ERROR_UPDATING_USERS = "Error updating users";
-    private const string ERROR_DELETING_USERS = "Error deleting users";
-    private readonly InMemoryDataContext dataContext;
+    private readonly List<User> users;
+    private readonly List<UserApplicationRole> userApplicationRoles;
+    private readonly List<ApplicationRole> applicationRoles;
     private readonly ILogger<InMemoryUserRepository> logger;
 
     public InMemoryUserRepository(InMemoryDataContext dataContext, ILogger<InMemoryUserRepository> logger)
     {
-        this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
+        if (dataContext is null)
+        {
+            throw new ArgumentNullException(nameof(dataContext));
+        }
+
+        users = dataContext.Users;
+        userApplicationRoles = dataContext.UserApplicationRoles;
+        applicationRoles = dataContext.ApplicationRoles;
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public Task<User> Create(User user, CancellationToken cancellationToken)
+        => Create(user, UserId.New(), cancellationToken);
+
+    public Task<User> Create(User user, UserId userId, CancellationToken cancellationToken)
     {
+        if (user is null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
         try
         {
-            user.Id = UserId.New();
+            user.Id = userId;
             user.LastChanged = DateTime.UtcNow;
-            dataContext.Users.Add(user);
+            users.Add(user);
             return Task.FromResult(user);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_INSERTING_USERS);
+            logger.UsersInsertingError(exception);
             throw;
         }
     }
 
     public Task<User> Update(User user, CancellationToken cancellationToken)
     {
+        if (user is null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
         try
         {
-            var storedUser = dataContext.Users.FirstOrDefault(a => a.Id == user.Id);
+            var storedUser = users.FirstOrDefault(a => a.Id == user.Id);
 
             if (storedUser == null)
             {
@@ -52,14 +71,14 @@ public class InMemoryUserRepository : IUserRepository
             }
 
             user.LastChanged = DateTime.UtcNow;
-            dataContext.Users.Remove(storedUser);
-            dataContext.Users.Add(user);
+            users.Remove(storedUser);
+            users.Add(user);
 
             return Task.FromResult(user);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.UsersUpdatingError(exception);
             throw;
         }
     }
@@ -68,11 +87,11 @@ public class InMemoryUserRepository : IUserRepository
     {
         try
         {
-            return Task.FromResult(dataContext.Users.RemoveAll(a => a.Id == userId));
+            return Task.FromResult(users.RemoveAll(a => a.Id == userId));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_DELETING_USERS);
+            logger.UsersDeletingError(exception);
             throw;
         }
     }
@@ -99,7 +118,7 @@ public class InMemoryUserRepository : IUserRepository
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.UsersDeletingError(exception);
             throw;
         }
     }
@@ -108,24 +127,29 @@ public class InMemoryUserRepository : IUserRepository
     {
         try
         {
-            return Task.FromResult(dataContext.Users.FirstOrDefault(u => u.Id == userId));
+            return Task.FromResult(users.FirstOrDefault(u => u.Id == userId));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.UsersLoadingError(exception);
             throw;
         }
     }
 
     public Task<User> GetUserByLogin(string login, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(login))
+        {
+            throw new ArgumentException($"'{nameof(login)}' cannot be null or empty.", nameof(login));
+        }
+
         try
         {
-            return Task.FromResult(dataContext.Users.FirstOrDefault(u => u.Login.Equals(login, StringComparison.OrdinalIgnoreCase)));
+            return Task.FromResult(users.FirstOrDefault(u => u.Login.Equals(login, StringComparison.OrdinalIgnoreCase)));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.UsersLoadingError(exception);
             throw;
         }
     }
@@ -134,25 +158,25 @@ public class InMemoryUserRepository : IUserRepository
     {
         try
         {
-            return Task.FromResult(dataContext.Users.AsEnumerable());
+            return Task.FromResult(users.AsEnumerable());
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.UsersLoadingError(exception);
             throw;
         }
     }
 
-    public Task<IEnumerable<User>> GetUserByRole(ApplicationRoleId roleId)
+    public Task<IEnumerable<User>> GetUserByRole(ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
         try
         {
-            return Task.FromResult(dataContext.UserApplicationRoles.Where(r => r.ApplicationRoleId == roleId)
-                .Join(dataContext.Users, r => r.UserId, u => u.Id, (r, u) => u));
+            return Task.FromResult(userApplicationRoles.Where(r => r.ApplicationRoleId == roleId)
+                .Join(users, r => r.UserId, u => u.Id, (r, u) => u));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.UsersLoadingError(exception);
             throw;
         }
     }
@@ -161,12 +185,12 @@ public class InMemoryUserRepository : IUserRepository
     {
         try
         {
-            return Task.FromResult(dataContext.UserApplicationRoles.Where(r => r.UserId == userId)
-                .Join(dataContext.ApplicationRoles, r => r.ApplicationRoleId, ar => ar.Id, (r, ar) => ar));
+            return Task.FromResult(userApplicationRoles.Where(r => r.UserId == userId)
+                .Join(applicationRoles, r => r.ApplicationRoleId, ar => ar.Id, (r, ar) => ar));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.ApplicationRolesLoadingError(exception);
             throw;
         }
     }
@@ -175,7 +199,7 @@ public class InMemoryUserRepository : IUserRepository
     {
         try
         {
-            dataContext.UserApplicationRoles.Add(new UserApplicationRole()
+            userApplicationRoles.Add(new UserApplicationRole()
             {
                 UserId = userId,
                 ApplicationRoleId = roleId,
@@ -184,7 +208,7 @@ public class InMemoryUserRepository : IUserRepository
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.ApplicationRolesInsertingError(exception);
             throw;
         }
     }
@@ -193,12 +217,12 @@ public class InMemoryUserRepository : IUserRepository
     {
         try
         {
-            dataContext.UserApplicationRoles.RemoveAll(r => r.UserId == userId && r.ApplicationRoleId == roleId);
+            userApplicationRoles.RemoveAll(r => r.UserId == userId && r.ApplicationRoleId == roleId);
             await UpdateUserLastChange(userId, cancellationToken);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.ApplicationRolesDeletingError(exception);
             throw;
         }
     }
@@ -208,7 +232,7 @@ public class InMemoryUserRepository : IUserRepository
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var user = dataContext.Users.FirstOrDefault(u => u.Id == userId);
+            var user = users.FirstOrDefault(u => u.Id == userId);
 
             if (user is not null)
             {
@@ -219,8 +243,20 @@ public class InMemoryUserRepository : IUserRepository
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.UsersUpdatingError(exception);
             throw;
         }
+    }
+
+    public Task ClearRoles(CancellationToken cancellationToken)
+    {
+        userApplicationRoles.Clear();
+        return Task.CompletedTask;
+    }
+
+    public Task Clear(CancellationToken cancellationToken)
+    {
+        users.Clear();
+        return Task.CompletedTask;
     }
 }

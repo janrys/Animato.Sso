@@ -27,9 +27,12 @@ public interface IUserRepository
     /// <returns></returns>
     Task DeleteForce(UserId userId, CancellationToken cancellationToken);
     Task<User> Create(User user, CancellationToken cancellationToken);
+    Task<User> Create(User user, UserId userId, CancellationToken cancellationToken);
     Task<User> Update(User user, CancellationToken cancellationToken);
-    Task<IEnumerable<User>> GetUserByRole(ApplicationRoleId roleId);
+    Task<IEnumerable<User>> GetUserByRole(ApplicationRoleId roleId, CancellationToken cancellationToken);
     Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId userId, CancellationToken cancellationToken);
     Task AddUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken);
     Task RemoveUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken);
+    Task ClearRoles(CancellationToken cancellationToken);
+    Task Clear(CancellationToken cancellationToken);
 }

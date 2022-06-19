@@ -1,20 +1,21 @@
-namespace Animato.Sso.Infrastructure.Azure.Services.Persistence;
+namespace Animato.Sso.Infrastructure.AzureStorage.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
+using Animato.Sso.Infrastructure.AzureStorage.Services.Persistence.DTOs;
+using Azure.Data.Tables;
 using Microsoft.Extensions.Logging;
 
 public class AzureTableApplicationRoleRepository : IApplicationRoleRepository
 {
-    private const string ERROR_LOADING_APPLICATION_ROLES = "Error loading application roles";
-    private const string ERROR_INSERTING_APPLICATION_ROLES = "Error inserting application roles";
-    private const string ERROR_UPDATING_APPLICATION_ROLES = "Error updating application roles";
-    private const string ERROR_DELETING_APPLICATION_ROLES = "Error deleting application roles";
+    private TableClient Table => dataContext.ApplicationRoles;
+    private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
     private readonly ILogger<AzureTableApplicationRoleRepository> logger;
 
@@ -24,89 +25,144 @@ public class AzureTableApplicationRoleRepository : IApplicationRoleRepository
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    private Task ThrowExceptionIfTableNotExists(CancellationToken cancellationToken)
+        => CheckIfTableExists(cancellationToken);
+
     public async Task<IEnumerable<ApplicationRole>> GetByApplicationId(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            return Task.FromResult(dataContext.ApplicationRoles.Where(u => u.ApplicationId == applicationId));
+            var queryResult = Table.QueryAsync<ApplicationRoleTableEntity>(a => a.PartitionKey == applicationId.ToString(), cancellationToken: cancellationToken);
+            var results = new List<ApplicationRoleTableEntity>();
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            return results.Select(r => r.ToEntity());
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_APPLICATION_ROLES);
+            logger.ApplicationRolesLoadingError(exception);
             throw;
         }
     }
 
     public async Task<ApplicationRole> GetById(ApplicationRoleId applicationRoleId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            return Task.FromResult(dataContext.ApplicationRoles.FirstOrDefault(u => u.Id == applicationRoleId));
+            var queryResult = Table.QueryAsync<ApplicationRoleTableEntity>(a => a.RowKey == applicationRoleId.ToString(), cancellationToken: cancellationToken);
+            var results = new List<ApplicationRoleTableEntity>();
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (results.Count == 1)
+            {
+                return results.First().ToEntity();
+            }
+
+            if (results.Count == 0)
+            {
+                return null;
+            }
+
+            throw new DataAccessException($"Found duplicate application roles ({results.Count}) for id {applicationRoleId.Value}");
+
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_APPLICATION_ROLES);
+            logger.ApplicationRolesLoadingError(exception);
             throw;
         }
     }
 
     public async Task<ApplicationRole> Create(ApplicationRole role, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (role is null)
+        {
+            throw new ArgumentNullException(nameof(role));
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
             role.Id = ApplicationRoleId.New();
-            dataContext.ApplicationRoles.Add(role);
-            return Task.FromResult(role);
+            var tableEntity = role.ToTableEntity();
+            await Table.AddEntityAsync(tableEntity, cancellationToken);
+            return role;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_INSERTING_APPLICATION_ROLES);
+            logger.ApplicationRolesInsertingError(exception);
             throw;
         }
     }
 
     public async Task<ApplicationRole> Update(ApplicationRole role, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (role is null)
+        {
+            throw new ArgumentNullException(nameof(role));
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            var storedRole = dataContext.ApplicationRoles.FirstOrDefault(a => a.Id == role.Id);
+            var tableEntity = role.ToTableEntity();
+            await Table.UpdateEntityAsync(tableEntity, Azure.ETag.All, cancellationToken: cancellationToken);
+            return role;
 
-            if (storedRole == null)
-            {
-                throw new NotFoundException(nameof(Application), role.Id);
-            }
-
-            dataContext.ApplicationRoles.Remove(storedRole);
-            dataContext.ApplicationRoles.Add(role);
-
-            return Task.FromResult(role);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_APPLICATION_ROLES);
+            logger.ApplicationRolesUpdatingError(exception);
             throw;
         }
     }
 
     public async Task Delete(ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            return Task.FromResult(dataContext.ApplicationRoles.RemoveAll(a => a.Id == roleId));
+            var role = await GetById(roleId, cancellationToken);
+
+            if (role == null)
+            {
+                return;
+            }
+
+            var tableEntity = role.ToTableEntity();
+            await Table.DeleteEntityAsync(tableEntity.PartitionKey, tableEntity.RowKey, cancellationToken: cancellationToken);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_DELETING_APPLICATION_ROLES);
+            logger.ApplicationRolesDeletingError(exception);
+            throw;
+        }
+    }
+
+    public async Task Clear(CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            await AzureTableStorageDataContext.DeleteAllEntitiesAsync(Table, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesDeletingError(exception);
             throw;
         }
     }

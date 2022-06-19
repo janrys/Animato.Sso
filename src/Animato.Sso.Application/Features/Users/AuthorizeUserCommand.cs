@@ -138,7 +138,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
                 UserId = user.Id
             };
 
-            await tokenRepository.Insert(accessToken, cancellationToken);
+            await tokenRepository.Create(accessToken, cancellationToken);
 
             var authorizationResult = new AuthorizationResult
             {
@@ -171,7 +171,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
                 Created = DateTime.UtcNow
             };
 
-            await authorizationCodeRepository.Insert(authorizationCode, cancellationToken);
+            await authorizationCodeRepository.Create(authorizationCode, cancellationToken);
             return authorizationResult;
         }
     }

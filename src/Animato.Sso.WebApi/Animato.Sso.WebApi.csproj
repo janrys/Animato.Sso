@@ -36,6 +36,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\Animato.Sso.Application\Animato.Sso.Application.csproj" />
+    <ProjectReference Include="..\Animato.Sso.Infrastructure.Azure\Animato.Sso.Infrastructure.AzureStorage.csproj" />
     <ProjectReference Include="..\Animato.Sso.Infrastructure\Animato.Sso.Infrastructure.csproj" />
   </ItemGroup>
   

@@ -12,4 +12,5 @@ public interface IApplicationRoleRepository
     Task Delete(ApplicationRoleId roleId, CancellationToken cancellationToken);
     Task<ApplicationRole> Create(ApplicationRole role, CancellationToken cancellationToken);
     Task<ApplicationRole> Update(ApplicationRole role, CancellationToken cancellationToken);
+    Task Clear(CancellationToken cancellationToken);
 }

@@ -54,7 +54,7 @@ public class DeleteApplicationRoleCommand : IRequest<Unit>
                     return Unit.Value;
                 }
 
-                var users = await userRepository.GetUserByRole(request.RoleId);
+                var users = await userRepository.GetUserByRole(request.RoleId, cancellationToken);
                 if (users != null && users.Any())
                 {
                     throw new Exceptions.ValidationException(

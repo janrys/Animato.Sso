@@ -1,19 +1,21 @@
-namespace Animato.Sso.Infrastructure.Azure.Services.Persistence;
+namespace Animato.Sso.Infrastructure.AzureStorage.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
+using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
+using Animato.Sso.Infrastructure.AzureStorage.Services.Persistence.DTOs;
+using Azure.Data.Tables;
 using Microsoft.Extensions.Logging;
 
 public class AzureTableTokenRepository : ITokenRepository
 {
-    private const string ERROR_LOADING_TOKENS = "Error loading tokens";
-    private const string ERROR_INSERTING_TOKENS = "Error inserting token";
-    private const string ERROR_DELETING_TOKENS = "Error deleting token";
-    private const string ERROR_UPDATING_TOKENS = "Error updating token";
+    private TableClient Table => dataContext.Tokens;
+    private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
     private readonly ILogger<AzureTableTokenRepository> logger;
 
@@ -23,134 +25,215 @@ public class AzureTableTokenRepository : ITokenRepository
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    private Task ThrowExceptionIfTableNotExists(CancellationToken cancellationToken)
+        => CheckIfTableExists(cancellationToken);
+
     public async Task<Token> GetToken(string token, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (string.IsNullOrEmpty(token))
+        {
+            throw new ArgumentException($"'{nameof(token)}' cannot be null or empty.", nameof(token));
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            return Task.FromResult(dataContext.Tokens.FirstOrDefault(t => t.Value == token));
+            var results = new List<TokenTableEntity>();
+            var queryResult = Table.QueryAsync<TokenTableEntity>(a => a.Value == token, cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (results.Count == 1)
+            {
+                return results.First().ToEntity();
+            }
+
+            if (results.Count == 0)
+            {
+                return null;
+            }
+
+            throw new DataAccessException($"Found duplicate tokens ({results.Count}) for token {token}");
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_TOKENS);
+            logger.TokensLoadingError(exception);
             throw;
         }
     }
 
-    public async Task<Token> Insert(Token token, CancellationToken cancellationToken)
+    public async Task<Token> Create(Token token, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (token is null)
+        {
+            throw new ArgumentNullException(nameof(token));
+        }
 
-        try
-        {
-            token.Id = new TokenId(Guid.NewGuid());
-            dataContext.Tokens.Add(token);
-            return (await InsertInternal(cancellationToken, token)).FirstOrDefault();
-        }
-        catch (Exception exception)
-        {
-            logger.LogError(exception, ERROR_INSERTING_TOKENS);
-            throw;
-        }
+        token.Id = new TokenId(Guid.NewGuid());
+        return (await CreateInternal(cancellationToken, token)).FirstOrDefault();
     }
 
-    public async Task<IEnumerable<Token>> Insert(Token accessToken, Token refreshToken, CancellationToken cancellationToken)
+    public Task<IEnumerable<Token>> Create(Token accessToken, Token refreshToken, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (accessToken is null)
+        {
+            throw new ArgumentNullException(nameof(accessToken));
+        }
+
+        if (refreshToken is null)
+        {
+            throw new ArgumentNullException(nameof(refreshToken));
+        }
 
         refreshToken.Id = new TokenId(Guid.NewGuid());
         accessToken.Id = new TokenId(Guid.NewGuid());
         accessToken.RefreshTokenId = refreshToken.Id;
-        return InsertInternal(cancellationToken, accessToken, refreshToken);
+        return CreateInternal(cancellationToken, accessToken, refreshToken);
     }
 
-    public async Task<IEnumerable<Token>> Insert(Token accessToken, Token refreshToken, Token idToken, CancellationToken cancellationToken)
+    public Task<IEnumerable<Token>> Create(Token accessToken, Token refreshToken, Token idToken, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (accessToken is null)
+        {
+            throw new ArgumentNullException(nameof(accessToken));
+        }
+
+        if (refreshToken is null)
+        {
+            throw new ArgumentNullException(nameof(refreshToken));
+        }
+
+        if (idToken is null)
+        {
+            throw new ArgumentNullException(nameof(idToken));
+        }
 
         refreshToken.Id = new TokenId(Guid.NewGuid());
         accessToken.Id = new TokenId(Guid.NewGuid());
         idToken.Id = new TokenId(Guid.NewGuid());
         accessToken.RefreshTokenId = refreshToken.Id;
         idToken.RefreshTokenId = refreshToken.Id;
-        return InsertInternal(cancellationToken, accessToken, refreshToken, idToken);
+        return CreateInternal(cancellationToken, accessToken, refreshToken, idToken);
     }
 
-    private async Task<IEnumerable<Token>> InsertInternal(CancellationToken cancellationToken, params Token[] tokens)
+    private async Task<IEnumerable<Token>> CreateInternal(CancellationToken cancellationToken, params Token[] tokens)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            dataContext.Tokens.AddRange(tokens);
-            return Task.FromResult(tokens.AsEnumerable());
+            await AzureTableStorageDataContext.BatchManipulateEntities(Table
+                , tokens.Select(t => t.ToTableEntity())
+                , TableTransactionActionType.Add
+                , cancellationToken);
+            return tokens;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_INSERTING_TOKENS);
+            logger.TokensInsertingError(exception);
             throw;
         }
     }
 
-    public async Task<int> RemoveExpiredTokens()
+    public async Task<int> DeleteExpiredTokens(CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            var removedTokens = dataContext.Tokens.RemoveAll(t => t.Expiration <= DateTime.UtcNow);
-            return Task.FromResult(removedTokens);
+            var storedTokens = new List<TokenTableEntity>();
+            var queryResult = Table.QueryAsync<TokenTableEntity>(t => t.Expiration <= DateTime.UtcNow, cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => storedTokens.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (storedTokens.Any())
+            {
+                await AzureTableStorageDataContext.BatchManipulateEntities(Table
+                    , storedTokens
+                    , TableTransactionActionType.Delete
+                    , cancellationToken);
+            }
+
+            return storedTokens.Count;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_DELETING_TOKENS);
+            logger.TokensDeletingError(exception);
             throw;
         }
     }
 
     public async Task Revoke(string token, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (string.IsNullOrEmpty(token))
+        {
+            throw new ArgumentException($"'{nameof(token)}' cannot be null or empty.", nameof(token));
+        }
+
+        var storedToken = await GetToken(token, cancellationToken);
+
+        if (storedToken is not null)
+        {
+            storedToken.Revoked = DateTime.UtcNow;
+        }
+
+        await UpdateToken(storedToken, cancellationToken);
+    }
+
+    private async Task<Token> UpdateToken(Token token, CancellationToken cancellationToken)
+    {
+        if (token is null)
+        {
+            throw new ArgumentNullException(nameof(token));
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            var storedToken = dataContext.Tokens
-                .FirstOrDefault(t => t.Value == token && !t.Revoked.HasValue);
-
-            if (storedToken is not null)
-            {
-                storedToken.Revoked = DateTime.UtcNow;
-            }
-
-            return Task.CompletedTask;
+            var tableEntity = token.ToTableEntity();
+            await Table.UpdateEntityAsync(tableEntity, Azure.ETag.All, cancellationToken: cancellationToken);
+            return token;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_TOKENS);
+            logger.TokensUpdatingError(exception);
             throw;
         }
     }
 
     public async Task RevokeTokensForUser(UserId id, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            var storedToken = dataContext.Tokens.Where(t => t.UserId == id && !t.Revoked.HasValue);
+            var storedTokens = new List<TokenTableEntity>();
+            var queryResult = Table.QueryAsync<TokenTableEntity>(a => a.PartitionKey == id.ToString()
+                    && a.Revoked == null, cancellationToken: cancellationToken);
 
-            if (storedToken.Any())
+            await queryResult.AsPages()
+                .ForEachAsync(page => storedTokens.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (storedTokens.Any())
             {
-                storedToken.ToList().ForEach(t => t.Revoked = DateTime.UtcNow);
+                storedTokens.ToList().ForEach(t => t.Revoked = DateTime.UtcNow);
             }
 
-            return Task.CompletedTask;
+            await AzureTableStorageDataContext.BatchManipulateEntities(Table
+                , storedTokens
+                , TableTransactionActionType.UpdateReplace
+                , cancellationToken);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_TOKENS);
+            logger.TokensUpdatingError(exception);
             throw;
         }
     }

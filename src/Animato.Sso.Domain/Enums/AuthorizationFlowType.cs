@@ -3,17 +3,17 @@ namespace Animato.Sso.Domain.Enums;
 public class AuthorizationFlowType : Enumeration
 {
     /// <summary>
-    /// Default brand for new partners
+    /// Authorization code flow
     /// </summary>
     public static readonly AuthorizationFlowType Code = new(0, nameof(Code), "code");
 
     /// <summary>
-    /// Inherited brand from other partner
+    /// Implicit grant flow
     /// </summary>
     public static readonly AuthorizationFlowType Token = new(1, nameof(Token), "token");
 
     /// <summary>
-    /// Custom defined brand
+    /// OIDC flows with id token
     /// </summary>
     public static readonly AuthorizationFlowType IdToken = new(2, nameof(IdToken), "id_token");
 

@@ -1,8 +1,9 @@
-namespace Animato.Sso.Infrastructure.Azure.Services.Persistence;
+namespace Animato.Sso.Infrastructure.AzureStorage.Services.Persistence;
 
 public class AzureTableStorageOptions
 {
     public const string ConfigurationKey = nameof(AzureTableStorageOptions);
+    public const string ArraySplitter = ",";
 
     public string ConnectionString { get; set; }
     public string UsersTable { get; set; } = "users";

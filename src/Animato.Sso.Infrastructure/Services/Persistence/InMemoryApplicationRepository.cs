@@ -5,23 +5,28 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
 public class InMemoryApplicationRepository : IApplicationRepository
 {
-    private const string ERROR_LOADING_APPLICATIONS = "Error loading applications";
-    private const string ERROR_INSERTING_APPLICATIONS = "Error inserting applications";
-    private const string ERROR_UPDATING_APPLICATIONS = "Error updating applications";
-    private const string ERROR_DELETING_APPLICATIONS = "Error deleting applications";
-    private const string ERROR_LOADING_ROLES = "Error loading roles";
-    private readonly InMemoryDataContext dataContext;
+    private readonly List<Application> applications;
+    private readonly List<ApplicationRole> applicationRoles;
+    private readonly List<UserApplicationRole> userApplicationRoles;
     private readonly ILogger<InMemoryApplicationRepository> logger;
 
     public InMemoryApplicationRepository(InMemoryDataContext dataContext, ILogger<InMemoryApplicationRepository> logger)
     {
-        this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
+        if (dataContext is null)
+        {
+            throw new ArgumentNullException(nameof(dataContext));
+        }
+
+        applications = dataContext.Applications;
+        applicationRoles = dataContext.ApplicationRoles;
+        userApplicationRoles = dataContext.UserApplicationRoles;
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -29,11 +34,11 @@ public class InMemoryApplicationRepository : IApplicationRepository
     {
         try
         {
-            return Task.FromResult(dataContext.Applications.AsEnumerable());
+            return Task.FromResult(applications.AsEnumerable());
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_APPLICATIONS);
+            logger.ApplicationsLoadingError(exception);
             throw;
         }
     }
@@ -41,11 +46,11 @@ public class InMemoryApplicationRepository : IApplicationRepository
     {
         try
         {
-            return Task.FromResult(dataContext.Applications.FirstOrDefault(u => u.Code.Equals(code, StringComparison.OrdinalIgnoreCase)));
+            return Task.FromResult(applications.FirstOrDefault(u => u.Code.Equals(code, StringComparison.OrdinalIgnoreCase)));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_APPLICATIONS);
+            logger.ApplicationsLoadingError(exception);
             throw;
         }
     }
@@ -54,11 +59,11 @@ public class InMemoryApplicationRepository : IApplicationRepository
     {
         try
         {
-            return Task.FromResult(dataContext.Applications.FirstOrDefault(u => u.Id == applicationId));
+            return Task.FromResult(applications.FirstOrDefault(u => u.Id == applicationId));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_APPLICATIONS);
+            logger.ApplicationsLoadingError(exception);
             throw;
         }
     }
@@ -67,11 +72,11 @@ public class InMemoryApplicationRepository : IApplicationRepository
     {
         try
         {
-            return Task.FromResult(dataContext.ApplicationRoles.Where(r => r.ApplicationId == applicationId));
+            return Task.FromResult(applicationRoles.Where(r => r.ApplicationId == applicationId));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_ROLES);
+            logger.ApplicationRolesLoadingError(exception);
             throw;
         }
     }
@@ -80,14 +85,13 @@ public class InMemoryApplicationRepository : IApplicationRepository
     {
         try
         {
-            return Task.FromResult(dataContext
-                .ApplicationRoles.Where(r => r.ApplicationId == applicationId)
-                .Join(dataContext.UserApplicationRoles
+            return Task.FromResult(applicationRoles.Where(r => r.ApplicationId == applicationId)
+                .Join(userApplicationRoles
                 .Where(uar => uar.UserId == userId), ar => ar.Id, uar => uar.ApplicationRoleId, (ar, uar) => ar));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_ROLES);
+            logger.ApplicationRolesLoadingError(exception);
             throw;
         }
     }
@@ -97,12 +101,12 @@ public class InMemoryApplicationRepository : IApplicationRepository
         try
         {
             application.Id = Domain.Entities.ApplicationId.New();
-            dataContext.Applications.Add(application);
+            applications.Add(application);
             return Task.FromResult(application);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_INSERTING_APPLICATIONS);
+            logger.ApplicationsInsertingError(exception);
             throw;
         }
     }
@@ -111,21 +115,21 @@ public class InMemoryApplicationRepository : IApplicationRepository
     {
         try
         {
-            var storedApplication = dataContext.Applications.FirstOrDefault(a => a.Id == application.Id);
+            var storedApplication = applications.FirstOrDefault(a => a.Id == application.Id);
 
             if (storedApplication == null)
             {
                 throw new NotFoundException(nameof(Application), application.Id);
             }
 
-            dataContext.Applications.Remove(storedApplication);
-            dataContext.Applications.Add(application);
+            applications.Remove(storedApplication);
+            applications.Add(application);
 
             return Task.FromResult(application);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_APPLICATIONS);
+            logger.ApplicationsUpdatingError(exception);
             throw;
         }
     }
@@ -134,12 +138,18 @@ public class InMemoryApplicationRepository : IApplicationRepository
     {
         try
         {
-            return Task.FromResult(dataContext.Applications.RemoveAll(a => a.Id == applicationId));
+            return Task.FromResult(applications.RemoveAll(a => a.Id == applicationId));
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_DELETING_APPLICATIONS);
+            logger.ApplicationsDeletingError(exception);
             throw;
         }
+    }
+
+    public Task Clear(CancellationToken cancellationToken)
+    {
+        applications.Clear();
+        return Task.CompletedTask;
     }
 }

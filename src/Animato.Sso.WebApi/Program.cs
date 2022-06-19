@@ -1,5 +1,6 @@
 using Animato.Sso.Application;
 using Animato.Sso.Infrastructure;
+using Animato.Sso.Infrastructure.AzureStorage;
 using Animato.Sso.WebApi.Extensions;
 using Serilog;
 
@@ -12,7 +13,9 @@ try
     builder.Configuration.AddCustomConfiguration(builder.Environment.EnvironmentName);
     builder.AddCustomLogging();
     builder.Services.AddApplication(builder.Configuration);
-    builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services
+        .AddInfrastructure(builder.Configuration)
+        .AddAzureInfrastructure(builder.Configuration);
     builder.Services.AddWebApi(builder.Environment);
 
     var app = builder.Build();

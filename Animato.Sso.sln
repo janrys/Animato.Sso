@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{9B74E486-1465-4FD3-BB07-D9DD20F2BA6F}"
+	ProjectSection(SolutionItems) = preProject
+		docs\Requests\APIDocs.md = docs\Requests\APIDocs.md
+		docs\Requests\metadata.http = docs\Requests\metadata.http
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A661B34B-3191-4712-847E-04537CE2C5DB}"
 EndProject
@@ -24,7 +28,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Animato.Sso.Infrastructure"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Animato.Sso.WebApi", "src\Animato.Sso.WebApi\Animato.Sso.WebApi.csproj", "{11BF69D2-CE9E-4F3F-9C9A-F09D867B18DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Animato.Sso.Infrastructure.Azure", "src\Animato.Sso.Infrastructure.Azure\Animato.Sso.Infrastructure.Azure.csproj", "{B216FD29-F1BA-4D1F-96FD-C25F54E87E90}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Animato.Sso.Infrastructure.AzureStorage", "src\Animato.Sso.Infrastructure.Azure\Animato.Sso.Infrastructure.AzureStorage.csproj", "{B216FD29-F1BA-4D1F-96FD-C25F54E87E90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

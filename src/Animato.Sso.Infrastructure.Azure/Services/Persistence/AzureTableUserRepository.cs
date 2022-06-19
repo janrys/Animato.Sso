@@ -1,20 +1,23 @@
-namespace Animato.Sso.Infrastructure.Azure.Services.Persistence;
+namespace Animato.Sso.Infrastructure.AzureStorage.Services.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
+using Animato.Sso.Infrastructure.AzureStorage.Services.Persistence.DTOs;
+using Azure.Data.Tables;
 using Microsoft.Extensions.Logging;
 
 public class AzureTableUserRepository : IUserRepository
 {
-    private const string ERROR_LOADING_USERS = "Error loading users";
-    private const string ERROR_INSERTING_USERS = "Error inserting users";
-    private const string ERROR_UPDATING_USERS = "Error updating users";
-    private const string ERROR_DELETING_USERS = "Error deleting users";
+    private TableClient TableUsers => dataContext.Users;
+    private TableClient TableUserApplicationRoles => dataContext.UserApplicationRoles;
+    private TableClient TableApplicationRoles => dataContext.ApplicationRoles;
+    private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
     private readonly ILogger<AzureTableUserRepository> logger;
 
@@ -24,226 +27,345 @@ public class AzureTableUserRepository : IUserRepository
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<User> Create(User user, CancellationToken cancellationToken)
+    private Task ThrowExceptionIfTableNotExists(CancellationToken cancellationToken)
+        => CheckIfTableExists(cancellationToken);
+
+
+    public Task<User> Create(User user, CancellationToken cancellationToken)
+        => Create(user, UserId.New(), cancellationToken);
+
+    public async Task<User> Create(User user, UserId userId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (user is null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-
-            user.Id = UserId.New();
+            user.Id = userId;
             user.LastChanged = DateTime.UtcNow;
-            dataContext.Users.Add(user);
-            return Task.FromResult(user);
+            var tableEntity = user.ToTableEntity();
+            await TableUsers.AddEntityAsync(tableEntity, cancellationToken);
+            return user;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_INSERTING_USERS);
+            logger.UsersInsertingError(exception);
             throw;
         }
     }
 
     public async Task<User> Update(User user, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            var storedUser = dataContext.Users.FirstOrDefault(a => a.Id == user.Id);
-
-            if (storedUser == null)
-            {
-                throw new NotFoundException(nameof(User), user.Id);
-            }
-
             user.LastChanged = DateTime.UtcNow;
-            dataContext.Users.Remove(storedUser);
-            dataContext.Users.Add(user);
-
-            return Task.FromResult(user);
+            var tableEntity = user.ToTableEntity();
+            await TableUsers.UpdateEntityAsync(tableEntity, Azure.ETag.All, cancellationToken: cancellationToken);
+            return user;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.UsersUpdatingError(exception);
             throw;
         }
     }
 
     public async Task DeleteForce(UserId userId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        var user = await GetById(userId, cancellationToken);
+
+        if (user == null)
+        {
+            return;
+        }
+
+        var tableEntity = user.ToTableEntity();
 
         try
         {
-            return Task.FromResult(dataContext.Users.RemoveAll(a => a.Id == userId));
+            await TableUsers.DeleteEntityAsync(tableEntity.PartitionKey, tableEntity.RowKey, cancellationToken: cancellationToken);
+
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_DELETING_USERS);
+            logger.UsersDeletingError(exception);
             throw;
         }
     }
 
     public async Task DeleteSoft(UserId userId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        var user = await GetById(userId, cancellationToken);
+
+        if (user == null)
+        {
+            throw new NotFoundException(nameof(User), userId);
+        }
+
+        if (user.IsDeleted)
+        {
+            return;
+        }
+
+        user.IsDeleted = true;
+        await Update(user, cancellationToken);
+    }
+
+    public async Task<User> GetById(UserId userId, CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            var user = await GetById(userId, cancellationToken);
+            var results = new List<UserTableEntity>();
+            var queryResult = TableUsers.QueryAsync<UserTableEntity>(a => a.RowKey == userId.Value.ToString(), cancellationToken: cancellationToken);
 
-            if (user == null)
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (results.Count == 1)
             {
-                throw new NotFoundException(nameof(User), userId);
+                return results.First().ToEntity();
             }
 
-            if (user.IsDeleted)
+            if (results.Count == 0)
             {
-                return;
+                return null;
             }
 
-            user.IsDeleted = true;
-            await Update(user, cancellationToken);
-
+            throw new DataAccessException($"Found duplicate users ({results.Count}) for id {userId.Value}");
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.UsersLoadingError(exception);
             throw;
         }
     }
 
-    public Task<User> GetById(UserId userId, CancellationToken cancellationToken)
+    public async Task<User> GetUserByLogin(string login, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        if (string.IsNullOrEmpty(login))
+        {
+            throw new ArgumentException($"'{nameof(login)}' cannot be null or empty.", nameof(login));
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            return Task.FromResult(dataContext.Users.FirstOrDefault(u => u.Id == userId));
+            login = login.ToLowerInvariant();
+            var results = new List<UserTableEntity>();
+            var queryResult = TableUsers.QueryAsync<UserTableEntity>(a => a.PartitionKey == login, cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (results.Count == 1)
+            {
+                return results.First().ToEntity();
+            }
+
+            if (results.Count == 0)
+            {
+                return null;
+            }
+
+            throw new DataAccessException($"Found duplicate users ({results.Count}) for id {login}");
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
-            throw;
-        }
-    }
-
-    public Task<User> GetUserByLogin(string login, CancellationToken cancellationToken)
-    {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
-
-        try
-        {
-            return Task.FromResult(dataContext.Users.FirstOrDefault(u => u.Login.Equals(login, StringComparison.OrdinalIgnoreCase)));
-        }
-        catch (Exception exception)
-        {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.UsersLoadingError(exception);
             throw;
         }
     }
 
     public async Task<IEnumerable<User>> GetUsers(CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            return Task.FromResult(dataContext.Users.AsEnumerable());
+            var results = new List<UserTableEntity>();
+            var queryResult = TableUsers.QueryAsync<UserTableEntity>(cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            return results.Select(u => u.ToEntity());
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.UsersLoadingError(exception);
             throw;
         }
     }
 
-    public async Task<IEnumerable<User>> GetUserByRole(ApplicationRoleId roleId)
+    public async Task<IEnumerable<User>> GetUserByRole(ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            return Task.FromResult(dataContext.UserApplicationRoles.Where(r => r.ApplicationRoleId == roleId)
-                .Join(dataContext.Users, r => r.UserId, u => u.Id, (r, u) => u));
+            var userApplicationRoles = new List<UserApplicationRoleTableEntity>();
+            var queryResult = TableUserApplicationRoles
+                .QueryAsync<UserApplicationRoleTableEntity>(r => r.ApplicationRoleId == roleId.Value.ToString()
+                , cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => userApplicationRoles.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (userApplicationRoles.Count == 0)
+            {
+                return Enumerable.Empty<User>();
+            }
+
+            var users = new List<User>();
+
+            foreach (var userRole in userApplicationRoles)
+            {
+                var user = await GetById(userRole.ToEntity().UserId, cancellationToken);
+
+                if (user is not null)
+                {
+                    users.Add(user);
+                }
+            }
+
+            return users;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.UsersLoadingError(exception);
             throw;
         }
     }
 
     public async Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId userId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            return Task.FromResult(dataContext.UserApplicationRoles.Where(r => r.UserId == userId)
-                .Join(dataContext.ApplicationRoles, r => r.ApplicationRoleId, ar => ar.Id, (r, ar) => ar));
+            var userApplicationRoles = new List<UserApplicationRoleTableEntity>();
+            var queryResult = TableUserApplicationRoles
+                .QueryAsync<UserApplicationRoleTableEntity>(r => r.UserId == userId.Value.ToString()
+                , cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => userApplicationRoles.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (userApplicationRoles.Count == 0)
+            {
+                return Enumerable.Empty<ApplicationRole>();
+            }
+
+            var applicationRoles = new List<ApplicationRoleTableEntity>();
+
+            foreach (var userRole in userApplicationRoles)
+            {
+                var queryResultApplicationRoles = TableApplicationRoles
+                .QueryAsync<ApplicationRoleTableEntity>(r => r.RowKey == userRole.ApplicationRoleId
+                , cancellationToken: cancellationToken);
+
+                await queryResultApplicationRoles.AsPages()
+                    .ForEachAsync(page => applicationRoles.AddRange(page.Values), cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            return applicationRoles.Select(r => r.ToEntity());
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_LOADING_USERS);
+            logger.ApplicationRolesLoadingError(exception);
             throw;
         }
     }
 
     public async Task AddUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            dataContext.UserApplicationRoles.Add(new UserApplicationRole()
-            {
-                UserId = userId,
-                ApplicationRoleId = roleId,
-            });
+            var tableEntity = new UserApplicationRoleTableEntity(roleId, userId);
+            await TableUserApplicationRoles.AddEntityAsync(tableEntity, cancellationToken);
             await UpdateUserLastChange(userId, cancellationToken);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.ApplicationRolesInsertingError(exception);
             throw;
         }
     }
 
     public async Task RemoveUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            dataContext.UserApplicationRoles.RemoveAll(r => r.UserId == userId && r.ApplicationRoleId == roleId);
+            var tableEntity = new UserApplicationRoleTableEntity(roleId, userId);
+            await TableUserApplicationRoles.DeleteEntityAsync(tableEntity.PartitionKey, tableEntity.RowKey, cancellationToken: cancellationToken);
             await UpdateUserLastChange(userId, cancellationToken);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.ApplicationRolesDeletingError(exception);
             throw;
         }
     }
 
     private async Task UpdateUserLastChange(UserId userId, CancellationToken cancellationToken)
     {
-        await dataContext.ThrowExceptionIfTableNotExists(cancellationToken);
+        var user = await GetById(userId, cancellationToken);
+
+        if (user is not null)
+        {
+            user.LastChanged = DateTime.UtcNow;
+        }
+
+        await Update(user, cancellationToken);
+    }
+
+    public async Task ClearRoles(CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
-            var user = dataContext.Users.FirstOrDefault(u => u.Id == userId);
-
-            if (user is not null)
-            {
-                user.LastChanged = DateTime.UtcNow;
-            }
-
-            return Task.CompletedTask;
+            await AzureTableStorageDataContext.DeleteAllEntitiesAsync(TableUserApplicationRoles, CancellationToken.None);
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, ERROR_UPDATING_USERS);
+            logger.ApplicationRolesDeletingError(exception);
+            throw;
+        }
+    }
+
+    public async Task Clear(CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            await AzureTableStorageDataContext.DeleteAllEntitiesAsync(TableUsers, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesDeletingError(exception);
             throw;
         }
     }

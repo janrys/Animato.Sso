@@ -21,4 +21,8 @@ public class InMemoryDataContext
     public List<UserApplicationRole> UserApplicationRoles { get; set; } = new List<UserApplicationRole> { };
     public List<AuthorizationCode> Codes { get; set; } = new List<AuthorizationCode> { };
     public List<Token> Tokens { get; set; } = new List<Token> { };
+    public List<Scope> Scopes { get; set; } = new List<Scope> { };
+    public List<Claim> Claims { get; set; } = new List<Claim> { };
+    public List<ClaimScope> ClaimScopes { get; set; } = new List<ClaimScope> { };
+    public List<UserClaim> UserClaims { get; set; } = new List<UserClaim> { };
 }

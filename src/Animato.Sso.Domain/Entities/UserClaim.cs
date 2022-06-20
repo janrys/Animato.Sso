@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.Domain.Entities;
+namespace Animato.Sso.Domain.Entities;
 
 public class UserClaim
 {

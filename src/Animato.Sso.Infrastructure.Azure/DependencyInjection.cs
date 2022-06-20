@@ -36,6 +36,8 @@ public static class DependencyInjection
         services.AddSingleton<IApplicationRoleRepository, AzureTableApplicationRoleRepository>();
         services.AddSingleton<IAuthorizationCodeRepository, AzureTableAuthorizationCodeRepository>();
         services.AddSingleton<ITokenRepository, AzureTableTokenRepository>();
+        services.AddSingleton<IScopeRepository, AzureTableScopeRepository>();
+        services.AddSingleton<IClaimRepository, AzureTableClaimRepository>();
         return services;
     }
 }

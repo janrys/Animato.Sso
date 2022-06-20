@@ -18,6 +18,8 @@ public class DataSeeder : IDataSeeder
     private readonly IUserRepository userRepository;
     private readonly IApplicationRepository applicationRepository;
     private readonly IApplicationRoleRepository applicationRoleRepository;
+    private readonly IScopeRepository scopeRepository;
+    private readonly IClaimRepository claimRepository;
     private readonly IDateTimeService dateTime;
     private readonly ILogger<DataSeeder> logger;
     private User testUser;
@@ -35,6 +37,8 @@ public class DataSeeder : IDataSeeder
         , IUserRepository userRepository
         , IApplicationRepository applicationRepository
         , IApplicationRoleRepository applicationRoleRepository
+        , IScopeRepository scopeRepository
+        , IClaimRepository claimRepository
         , IDateTimeService dateTime
         , ILogger<DataSeeder> logger)
     {
@@ -43,6 +47,8 @@ public class DataSeeder : IDataSeeder
         this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
         this.applicationRoleRepository = applicationRoleRepository ?? throw new ArgumentNullException(nameof(applicationRoleRepository));
+        this.scopeRepository = scopeRepository ?? throw new ArgumentNullException(nameof(scopeRepository));
+        this.claimRepository = claimRepository ?? throw new ArgumentNullException(nameof(claimRepository));
         this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -54,6 +60,8 @@ public class DataSeeder : IDataSeeder
         await SeedApplications();
         await SeedApplicationRoles();
         await SeedUserApplicationRoles();
+        await SeedScopes();
+        await SeedClaims();
     }
 
     private async Task Clear()
@@ -62,6 +70,27 @@ public class DataSeeder : IDataSeeder
         await userRepository.Clear(CancellationToken.None);
         await applicationRoleRepository.Clear(CancellationToken.None);
         await applicationRepository.Clear(CancellationToken.None);
+    }
+
+    private async Task SeedScopes()
+    {
+        await scopeRepository.Create(Scope.All, Scope.All.Id, CancellationToken.None);
+        await scopeRepository.Create(Scope.General, Scope.General.Id, CancellationToken.None);
+        await scopeRepository.Create(Scope.Online, Scope.Online.Id, CancellationToken.None);
+        await scopeRepository.Create(Scope.Phone, Scope.Phone.Id, CancellationToken.None);
+        await scopeRepository.Create(Scope.Role, Scope.Role.Id, CancellationToken.None);
+        await scopeRepository.Create(Scope.Mail, Scope.Mail.Id, CancellationToken.None);
+        logger.LogInformation("Scopes seeded");
+    }
+
+
+    private async Task SeedClaims()
+    {
+        await claimRepository.Create(Claim.Gender, Claim.Gender.Id, CancellationToken.None);
+        await claimRepository.Create(Claim.Phone, Claim.Phone.Id, CancellationToken.None);
+        await claimRepository.Create(Claim.Mail, Claim.Mail.Id, CancellationToken.None);
+
+        logger.LogInformation("Claims seeded");
     }
 
     private async Task SeedUserApplicationRoles()

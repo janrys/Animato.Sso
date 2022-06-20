@@ -45,6 +45,8 @@ public static class DependencyInjection
         services.AddSingleton<IApplicationRoleRepository, InMemoryApplicationRoleRepository>();
         services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
         services.AddSingleton<ITokenRepository, InMemoryTokenRepository>();
+        services.AddSingleton<IScopeRepository, InMemoryScopeRepository>();
+        services.AddSingleton<IClaimRepository, InMemoryClaimRepository>();
         return services;
     }
 }

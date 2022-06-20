@@ -72,7 +72,11 @@ public static partial class LogMessages
     [LoggerMessage(20019, LogLevel.Error, "Error deleting tokens")]
     public static partial void TokensDeletingError(this ILogger logger, Exception exception);
 
+    [LoggerMessage(20020, LogLevel.Error, "Error inserting claims")]
+    public static partial void ClaimsInsertingError(this ILogger logger, Exception exception);
 
+    [LoggerMessage(20021, LogLevel.Error, "Error inserting scopes")]
+    public static partial void ScopesInsertingError(this ILogger logger, Exception exception);
 
     /* CRITICAL >= 30000  */
 

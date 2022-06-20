@@ -33,6 +33,7 @@ Test users:
 
 
 Data in test environment are refreshed after each restart.
+Logs are send to Application Insights "animato-dev-shared-apin".
 
 ## Configuration
 
@@ -57,9 +58,13 @@ GET {{baseUrl}}/.well-known/openid-configuration
 ## Authorization - implicit flow
 
 
+![Diagram](https://miro.medium.com/max/1400/1*kNt-5dQ5GjNPNgl98QmVkg.png)
+
 ```js
-GET {{baseUrl}}/authorize?response_type=token&client_id=animato:crm&redirect_uri=https://crm.animato.cz
+GET {{baseUrl}}/authorize?response_type=token&client_id=animato:crm&redirect_uri=https://crm.animato.cz&state=123456
 ```
+
+State is an optional parameter. Response contains unmodified value of state, if it's present in request.
 
 User is not logged in - response is HTML form for user interactive log in:
 
@@ -80,14 +85,17 @@ HTTP/1.1 200 OK
 
 ```json
 HTTP/1.1 302 OK
-Location: https://crm.animato.cz#access_token=eyJhbGciOiJIUzI1NiIsIn....
+Location: https://crm.animato.cz#access_token=eyJhbGciOiJIUzI1NiIsIn....&state=123456
 ```
 
 ## Authorization - code grant flow
 
+![Diagram](https://miro.medium.com/max/1400/1*quwFs1fFCvTvLT80e_QHVA.png)
+
 ```js
-GET {{baseUrl}}/authorize?response_type=code&client_id=animato:crm&redirect_uri=https://crm.animato.cz
+GET {{baseUrl}}/authorize?response_type=code&client_id=animato:crm&redirect_uri=https://crm.animato.cz&state=123456
 ```
+State is an optional parameter. Response contains unmodified value of state, if it's present in request.
 
 User is not logged in - response is HTML form for user interactive log in:
 
@@ -108,7 +116,7 @@ HTTP/1.1 200 OK
 
 ```json
 HTTP/1.1 302 REDIRECT
-Location: Location: https://crm.animato.cz?code=8L3YJh2ZbAsjsPCo1HVcXR9IkGtLp1
+Location: Location: https://crm.animato.cz?code=8L3YJh2ZbAsjsPCo1HVcXR9IkGtLp1&state=123456
 ```
 
 Authorization code expires in 10 minutes and can be used just once.

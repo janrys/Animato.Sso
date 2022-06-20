@@ -8,6 +8,8 @@ public static partial class LogMessages
     /* DEBUG >= 5000  */
 
     /* INFORMATION >= 10000  */
+    [LoggerMessage(10001, LogLevel.Information, "Using {LayerName} persistence layer")]
+    public static partial void PersistenceLayerLoadingInformation(this ILogger logger, string layerName);
 
     /* WARNINGS >= 15000  */
 

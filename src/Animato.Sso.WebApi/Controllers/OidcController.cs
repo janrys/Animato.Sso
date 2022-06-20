@@ -80,12 +80,25 @@ public class OidcController : ApiControllerBase
 
         if (authorizationResult.AuthorizationFlow == AuthorizationFlowType.Token)
         {
-            redirectUri.SetFragment($"access_token={authorizationResult.AccessToken}");
+            var fragment = $"access_token={authorizationResult.AccessToken}";
+
+            if (!string.IsNullOrEmpty(authorizationRequest.State))
+            {
+                fragment += "$state={authorizationRequest.State}";
+            }
+
+            redirectUri.SetFragment(fragment);
             return Redirect(redirectUri.ToString());
         }
         else if (authorizationResult.AuthorizationFlow == AuthorizationFlowType.Code)
         {
             redirectUri.QueryParams.AddOrReplace("code", authorizationResult.Code);
+
+            if (!string.IsNullOrEmpty(authorizationRequest.State))
+            {
+                redirectUri.QueryParams.AddOrReplace("state", authorizationRequest.State);
+            }
+
             return Redirect(redirectUri.ToString());
         }
         else

@@ -3,6 +3,7 @@ namespace Animato.Sso.Infrastructure.AzureStorage.Services.Persistence;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Azure;
 using Azure.Data.Tables;
@@ -31,6 +32,7 @@ public class AzureTableStorageDataContext
         this.options = options ?? throw new ArgumentNullException(nameof(options));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         tableServiceClient = new TableServiceClient(options.ConnectionString);
+        this.logger.PersistenceLayerLoadingInformation("azure table storage");
     }
 
     public async Task<bool> ThrowExceptionIfTableNotExists(CancellationToken cancellationToken)

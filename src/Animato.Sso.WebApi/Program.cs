@@ -4,7 +4,7 @@ using Animato.Sso.Infrastructure.AzureStorage;
 using Animato.Sso.WebApi.Extensions;
 using Serilog;
 
-Log.Logger = Animato.Sso.WebApi.Extensions.ApplicationBuilderExtensions.CreateLogger();
+Log.Logger = Animato.Sso.WebApi.Extensions.ServiceCollectionExtensions.CreateBootstrapLogger();
 var assemblyName = System.Reflection.Assembly.GetEntryAssembly().GetName();
 Log.Information("Starting up {Application} {Version}", assemblyName.Name, assemblyName.Version);
 

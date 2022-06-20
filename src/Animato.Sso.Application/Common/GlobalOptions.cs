@@ -8,4 +8,7 @@ public class GlobalOptions
 
     public string Persistence { get; set; } = "inmemory";
     public string LogLevel { get; set; } = "Information";
+    public string ApplicationInsightsKey { get; set; } = "";
+    public bool LogToAzureDiagnosticsStream { get; set; } = false;
+    public string CorrelationHeaderName { get; set; } = "x-correlation-id";
 }

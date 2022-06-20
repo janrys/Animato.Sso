@@ -1,9 +1,8 @@
 namespace Animato.Sso.WebApi.Extensions;
 
 using Hellang.Middleware.ProblemDetails;
+using Microsoft.AspNetCore.Http.Extensions;
 using Serilog;
-using Serilog.Events;
-using Serilog.Exceptions;
 
 public static class ApplicationBuilderExtensions
 {
@@ -22,15 +21,12 @@ public static class ApplicationBuilderExtensions
 
     public static IApplicationBuilder UseCustomLogging(this IApplicationBuilder app)
     {
-        app.UseSerilogRequestLogging();
+        app.UseSerilogRequestLogging(options =>
+            options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+            {
+                diagnosticContext.Set("RequestUrl", httpContext.Request.GetDisplayUrl());
+                diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress);
+            });
         return app;
     }
-
-    public static ILogger CreateLogger()
-        => new LoggerConfiguration()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .Enrich.WithExceptionDetails()
-            .WriteTo.Async(a => a.Console())
-            .CreateBootstrapLogger();
 }

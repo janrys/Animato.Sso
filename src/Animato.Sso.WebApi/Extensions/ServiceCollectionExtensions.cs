@@ -10,12 +10,14 @@ using Animato.Sso.WebApi.Filters;
 using Animato.Sso.WebApi.Services;
 using FluentValidation.AspNetCore;
 using Hellang.Middleware.ProblemDetails;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Events;
+using Serilog.Exceptions;
 
 public static class ServiceCollectionExtensions
 {
@@ -31,30 +33,69 @@ public static class ServiceCollectionExtensions
         var globalOptions = new GlobalOptions();
         configuration.Bind(GlobalOptions.ConfigurationKey, globalOptions);
 
+        if (!string.IsNullOrEmpty(globalOptions.ApplicationInsightsKey))
+        {
+            builder.Services.AddApplicationInsightsTelemetry(globalOptions.ApplicationInsightsKey);
+        }
+
         var logLevel = LogEventLevel.Information;
         if (Enum.TryParse<LogEventLevel>(globalOptions.LogLevel, true, out var parsedLogLevel))
         {
             logLevel = parsedLogLevel;
         }
 
-        var msLogLevel = LogEventLevel.Information;
+        var msLogLevel = LogEventLevel.Warning;
 
-        if (logLevel is LogEventLevel.Warning or LogEventLevel.Error or LogEventLevel.Fatal)
+        if (logLevel is LogEventLevel.Error or LogEventLevel.Fatal)
         {
             msLogLevel = logLevel;
         }
 
         builder.Logging.ClearProviders();
-        builder.Host.UseSerilog((context, services, configuration) => configuration
+        builder.Host.UseSerilog((context, services, configuration) =>
+        {
+            configuration
                     .ReadFrom.Configuration(context.Configuration)
                     .ReadFrom.Services(services)
                     .MinimumLevel.Override("Microsoft", msLogLevel)
                     .MinimumLevel.Is(logLevel)
                     .Enrich.FromLogContext()
-                    .WriteTo.Async(a => a.Console()));
+                    .Enrich.WithExceptionDetails()
+                    .Enrich.WithCorrelationIdHeader(globalOptions.CorrelationHeaderName)
+                    .Enrich.WithMachineName()
+                    .WriteTo.Async(a => a.Console());
+
+            if (!string.IsNullOrEmpty(globalOptions.ApplicationInsightsKey))
+            {
+                configuration.WriteTo.ApplicationInsights(services.GetRequiredService<TelemetryConfiguration>(), TelemetryConverter.Traces);
+            }
+
+            if (globalOptions.LogToAzureDiagnosticsStream)
+            {
+                configuration.WriteTo.File(
+               Path.Combine(Environment.GetEnvironmentVariable("HOME"), "LogFiles", "Application", "diagnostics.txt"),
+               rollingInterval: RollingInterval.Day,
+               fileSizeLimitBytes: 10 * 1024 * 1024,
+               retainedFileCountLimit: 2,
+               rollOnFileSizeLimit: true,
+               shared: true,
+               flushToDiskInterval: TimeSpan.FromSeconds(1));
+            }
+        });
+
+
+
 
         return builder;
     }
+
+    public static ILogger CreateBootstrapLogger()
+        => new LoggerConfiguration()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .Enrich.WithExceptionDetails()
+            .WriteTo.Async(a => a.Console())
+            .CreateBootstrapLogger();
 
     public static IServiceCollection AddCustomProblemDetails(this IServiceCollection services)
     {

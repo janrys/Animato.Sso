@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.WebApi.BackgroundServices;
+namespace Animato.Sso.WebApi.BackgroundServices;
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,13 +9,18 @@ public class PurgeExpiredCodesService : BackgroundService
 {
     private readonly OidcOptions oidcOptions;
     private readonly IAuthorizationCodeRepository authorizationCodeRepository;
+    private readonly IDateTimeService dateTime;
     private readonly ILogger<PurgeExpiredCodesService> logger;
     private System.Timers.Timer timer;
 
-    public PurgeExpiredCodesService(OidcOptions oidcOptions, IAuthorizationCodeRepository authorizationCodeRepository, ILogger<PurgeExpiredCodesService> logger)
+    public PurgeExpiredCodesService(OidcOptions oidcOptions
+        , IAuthorizationCodeRepository authorizationCodeRepository
+        , IDateTimeService dateTime
+        , ILogger<PurgeExpiredCodesService> logger)
     {
         this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
         this.authorizationCodeRepository = authorizationCodeRepository ?? throw new ArgumentNullException(nameof(authorizationCodeRepository));
+        this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -35,7 +40,7 @@ public class PurgeExpiredCodesService : BackgroundService
     private async Task DoWork()
     {
         logger.LogInformation($"{nameof(PurgeExpiredCodesService)} starting");
-        var expirationDate = DateTime.UtcNow.AddMinutes(-1 * oidcOptions.CodeExpirationMinutes);
+        var expirationDate = dateTime.UtcNow.AddMinutes(-1 * oidcOptions.CodeExpirationMinutes);
         await authorizationCodeRepository.DeleteExpired(expirationDate, CancellationToken.None);
         logger.LogInformation($"{nameof(PurgeExpiredCodesService)} finished");
     }

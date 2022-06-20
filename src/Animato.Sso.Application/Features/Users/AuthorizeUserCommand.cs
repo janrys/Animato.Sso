@@ -32,6 +32,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
         private readonly IAuthorizationCodeRepository authorizationCodeRepository;
         private readonly ITokenRepository tokenRepository;
         private readonly ITokenFactory tokenFactory;
+        private readonly IDateTimeService dateTime;
         private readonly ILogger<AuthorizeUserCommandHandler> logger;
         private const string ERROR_AUTHORIZING_USER = "Error authorizing user";
 
@@ -40,6 +41,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
             , IAuthorizationCodeRepository authorizationCodeRepository
             , ITokenRepository tokenRepository
             , ITokenFactory tokenFactory
+            , IDateTimeService dateTime
             , ILogger<AuthorizeUserCommandHandler> logger)
         {
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -47,6 +49,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
             this.authorizationCodeRepository = authorizationCodeRepository ?? throw new ArgumentNullException(nameof(authorizationCodeRepository));
             this.tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
             this.tokenFactory = tokenFactory ?? throw new ArgumentNullException(nameof(tokenFactory));
+            this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -132,8 +135,8 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
             {
                 Value = tokenFactory.GenerateAccessToken(user, application, userRoles.ToArray()),
                 ApplicationId = application.Id,
-                Created = DateTime.UtcNow,
-                Expiration = DateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
+                Created = dateTime.UtcNow,
+                Expiration = dateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
                 TokenType = TokenType.Access,
                 UserId = user.Id
             };
@@ -168,7 +171,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
                 ClientId = authorizationRequest.ClientId,
                 RedirectUri = authorizationRequest.RedirectUri,
                 Scope = authorizationRequest.Scope,
-                Created = DateTime.UtcNow
+                Created = dateTime.UtcNow
             };
 
             await authorizationCodeRepository.Create(authorizationCode, cancellationToken);

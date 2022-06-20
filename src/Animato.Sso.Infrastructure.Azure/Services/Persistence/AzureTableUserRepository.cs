@@ -19,11 +19,15 @@ public class AzureTableUserRepository : IUserRepository
     private TableClient TableApplicationRoles => dataContext.ApplicationRoles;
     private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
+    private readonly IDateTimeService dateTime;
     private readonly ILogger<AzureTableUserRepository> logger;
 
-    public AzureTableUserRepository(AzureTableStorageDataContext dataContext, ILogger<AzureTableUserRepository> logger)
+    public AzureTableUserRepository(AzureTableStorageDataContext dataContext
+        , IDateTimeService dateTime
+        , ILogger<AzureTableUserRepository> logger)
     {
         this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
+        this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -46,7 +50,7 @@ public class AzureTableUserRepository : IUserRepository
         try
         {
             user.Id = userId;
-            user.LastChanged = DateTime.UtcNow;
+            user.LastChanged = dateTime.UtcNow;
             var tableEntity = user.ToTableEntity();
             await TableUsers.AddEntityAsync(tableEntity, cancellationToken);
             return user;
@@ -64,7 +68,7 @@ public class AzureTableUserRepository : IUserRepository
 
         try
         {
-            user.LastChanged = DateTime.UtcNow;
+            user.LastChanged = dateTime.UtcNow;
             var tableEntity = user.ToTableEntity();
             await TableUsers.UpdateEntityAsync(tableEntity, Azure.ETag.All, cancellationToken: cancellationToken);
             return user;
@@ -334,7 +338,7 @@ public class AzureTableUserRepository : IUserRepository
 
         if (user is not null)
         {
-            user.LastChanged = DateTime.UtcNow;
+            user.LastChanged = dateTime.UtcNow;
         }
 
         await Update(user, cancellationToken);

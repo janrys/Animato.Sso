@@ -26,6 +26,7 @@ public class GetTokenCommand : IRequest<TokenResult>
         private readonly IApplicationRepository applicationRepository;
         private readonly IAuthorizationCodeRepository authorizationCodeRepository;
         private readonly ITokenRepository tokenRepository;
+        private readonly IDateTimeService dateTime;
         private readonly ITokenFactory tokenFactory;
         private readonly ILogger<GetTokenCommandHandler> logger;
         private const string ERROR_CREATING_TOKEN = "Error creating token";
@@ -35,6 +36,7 @@ public class GetTokenCommand : IRequest<TokenResult>
             , IApplicationRepository applicationRepository
             , IAuthorizationCodeRepository authorizationCodeRepository
             , ITokenRepository tokenRepository
+            , IDateTimeService dateTime
             , ITokenFactory tokenFactory, ILogger<GetTokenCommandHandler> logger)
         {
             this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
@@ -42,6 +44,7 @@ public class GetTokenCommand : IRequest<TokenResult>
             this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
             this.authorizationCodeRepository = authorizationCodeRepository ?? throw new ArgumentNullException(nameof(authorizationCodeRepository));
             this.tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
+            this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
             this.tokenFactory = tokenFactory ?? throw new ArgumentNullException(nameof(tokenFactory));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -74,7 +77,7 @@ public class GetTokenCommand : IRequest<TokenResult>
                         throw new ForbiddenAccessException("", $"Authorization code is not valid. Code can be used just once and prior to expiration");
                     }
 
-                    if (code.Created < DateTime.UtcNow.AddMinutes(-1 * oidcOptions.CodeExpirationMinutes))
+                    if (code.Created < dateTime.UtcNow.AddMinutes(-1 * oidcOptions.CodeExpirationMinutes))
                     {
                         throw new ForbiddenAccessException("", $"Authorization code has already expired");
                     }
@@ -102,7 +105,7 @@ public class GetTokenCommand : IRequest<TokenResult>
                         throw new ForbiddenAccessException("", $"Refresh token has been revoked");
                     }
 
-                    if (refreshToken.IsExpired())
+                    if (refreshToken.IsExpired(dateTime.UtcNow))
                     {
                         throw new ForbiddenAccessException("", $"Refresh token has expired");
                     }
@@ -173,8 +176,8 @@ public class GetTokenCommand : IRequest<TokenResult>
             {
                 Value = tokenFactory.GenerateAccessToken(user, application, userRoles.ToArray()),
                 ApplicationId = application.Id,
-                Created = DateTime.UtcNow,
-                Expiration = DateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
+                Created = dateTime.UtcNow,
+                Expiration = dateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
                 TokenType = TokenType.Access,
                 UserId = user.Id,
                 RefreshTokenId = refreshToken.RefreshTokenId,
@@ -189,7 +192,7 @@ public class GetTokenCommand : IRequest<TokenResult>
 
             await tokenRepository.Create(accessToken, cancellationToken);
 
-            tokenResult.ExpiresIn = (int)accessToken.Expiration.Subtract(DateTime.UtcNow).TotalSeconds;
+            tokenResult.ExpiresIn = (int)accessToken.Expiration.Subtract(dateTime.UtcNow).TotalSeconds;
             return tokenResult;
         }
 
@@ -199,8 +202,8 @@ public class GetTokenCommand : IRequest<TokenResult>
             {
                 Value = tokenFactory.GenerateAccessToken(user, application, userRoles.ToArray()),
                 ApplicationId = application.Id,
-                Created = DateTime.UtcNow,
-                Expiration = DateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
+                Created = dateTime.UtcNow,
+                Expiration = dateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
                 TokenType = TokenType.Access,
                 UserId = user.Id
             };
@@ -209,8 +212,8 @@ public class GetTokenCommand : IRequest<TokenResult>
             {
                 Value = tokenFactory.GenerateRefreshToken(user),
                 ApplicationId = application.Id,
-                Created = DateTime.UtcNow,
-                Expiration = DateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
+                Created = dateTime.UtcNow,
+                Expiration = dateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
                 TokenType = TokenType.Refresh,
                 UserId = user.Id
             };
@@ -219,8 +222,8 @@ public class GetTokenCommand : IRequest<TokenResult>
             {
                 Value = tokenFactory.GenerateIdToken(user, application, userRoles.ToArray()),
                 ApplicationId = application.Id,
-                Created = DateTime.UtcNow,
-                Expiration = DateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
+                Created = dateTime.UtcNow,
+                Expiration = dateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
                 TokenType = TokenType.Id,
                 UserId = user.Id
             };
@@ -236,8 +239,8 @@ public class GetTokenCommand : IRequest<TokenResult>
 
             await tokenRepository.Create(accessToken, refreshToken, idToken, cancellationToken);
 
-            tokenResult.ExpiresIn = (int)accessToken.Expiration.Subtract(DateTime.UtcNow).TotalSeconds;
-            tokenResult.RefreshTokenExpiresIn = (int)refreshToken.Expiration.Subtract(DateTime.UtcNow).TotalSeconds;
+            tokenResult.ExpiresIn = (int)accessToken.Expiration.Subtract(dateTime.UtcNow).TotalSeconds;
+            tokenResult.RefreshTokenExpiresIn = (int)refreshToken.Expiration.Subtract(dateTime.UtcNow).TotalSeconds;
 
             return tokenResult;
         }

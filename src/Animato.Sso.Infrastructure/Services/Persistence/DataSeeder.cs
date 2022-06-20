@@ -10,81 +10,85 @@ using Animato.Sso.Domain.Entities;
 using Animato.Sso.Domain.Enums;
 using Microsoft.Extensions.Logging;
 
-public class InMemoryDataSeeder : IDataSeeder
+public class DataSeeder : IDataSeeder
 {
-    private readonly InMemoryDataContext dataContext;
+
     private readonly IPasswordHasher passwordHasher;
     private readonly OidcOptions oidcOptions;
-    private readonly ILogger<InMemoryDataSeeder> logger;
+    private readonly IUserRepository userRepository;
+    private readonly IApplicationRepository applicationRepository;
+    private readonly IApplicationRoleRepository applicationRoleRepository;
+    private readonly IDateTimeService dateTime;
+    private readonly ILogger<DataSeeder> logger;
     private User testUser;
     private User adminUser;
     private Application testAplication;
     private Application crmAplication;
+    private readonly List<Application> seededApplications = new();
+    private readonly List<ApplicationRole> seededApplicationRoles = new();
 
     private static readonly Guid AdminUserId = Guid.Parse("551845DC-0000-0000-0000-F401AF408965");
     private static readonly Guid TesterUserId = Guid.Parse("661845DC-0000-0000-0000-F401AF408966");
 
-    public InMemoryDataSeeder(InMemoryDataContext dataContext, IPasswordHasher passwordHasher, OidcOptions oidcOptions
-        , ILogger<InMemoryDataSeeder> logger)
+    public DataSeeder(IPasswordHasher passwordHasher
+        , OidcOptions oidcOptions
+        , IUserRepository userRepository
+        , IApplicationRepository applicationRepository
+        , IApplicationRoleRepository applicationRoleRepository
+        , IDateTimeService dateTime
+        , ILogger<DataSeeder> logger)
     {
-        this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
         this.passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
         this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
+        this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+        this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
+        this.applicationRoleRepository = applicationRoleRepository ?? throw new ArgumentNullException(nameof(applicationRoleRepository));
+        this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task Seed()
     {
+        await Clear();
         await SeedUsers();
         await SeedApplications();
         await SeedApplicationRoles();
         await SeedUserApplicationRoles();
     }
 
-    private Task SeedUserApplicationRoles()
+    private async Task Clear()
+    {
+        await userRepository.ClearRoles(CancellationToken.None);
+        await userRepository.Clear(CancellationToken.None);
+        await applicationRoleRepository.Clear(CancellationToken.None);
+        await applicationRepository.Clear(CancellationToken.None);
+    }
+
+    private async Task SeedUserApplicationRoles()
     {
         // assing all roles to admin
-        foreach (var role in dataContext.ApplicationRoles.Where(r => r.ApplicationId == crmAplication.Id))
+        foreach (var role in seededApplicationRoles.Where(r => r.ApplicationId == crmAplication.Id))
         {
-            var userApplicationRole = new UserApplicationRole()
-            {
-                ApplicationRoleId = role.Id,
-                UserId = adminUser.Id
-            };
-
-            dataContext.UserApplicationRoles.Add(userApplicationRole);
+            await userRepository.AddUserRole(adminUser.Id, role.Id, CancellationToken.None);
         }
 
-        foreach (var role in dataContext.ApplicationRoles.Where(r => r.ApplicationId == testAplication.Id))
+        foreach (var role in seededApplicationRoles.Where(r => r.ApplicationId == testAplication.Id))
         {
-            var userApplicationRole = new UserApplicationRole()
-            {
-                ApplicationRoleId = role.Id,
-                UserId = adminUser.Id
-            };
-
-            dataContext.UserApplicationRoles.Add(userApplicationRole);
+            await userRepository.AddUserRole(adminUser.Id, role.Id, CancellationToken.None);
         }
 
         // assign all reader roles for test user
-        foreach (var role in dataContext.ApplicationRoles.Where(r => r.Name.Contains("reader", StringComparison.InvariantCultureIgnoreCase)))
+        foreach (var role in seededApplicationRoles.Where(r => r.Name.Contains("reader", StringComparison.InvariantCultureIgnoreCase)))
         {
-            var userApplicationRole = new UserApplicationRole()
-            {
-                ApplicationRoleId = role.Id,
-                UserId = testUser.Id
-            };
-
-            dataContext.UserApplicationRoles.Add(userApplicationRole);
+            await userRepository.AddUserRole(testUser.Id, role.Id, CancellationToken.None);
         }
 
         logger.LogInformation("User application roles seeded");
-        return Task.CompletedTask;
     }
 
-    private Task SeedApplicationRoles()
+    private async Task SeedApplicationRoles()
     {
-        foreach (var application in dataContext.Applications)
+        foreach (var application in seededApplications)
         {
             var applicationRole = new ApplicationRole()
             {
@@ -92,7 +96,7 @@ public class InMemoryDataSeeder : IDataSeeder
                 ApplicationId = application.Id,
                 Name = $"{application.Name}_guest"
             };
-            dataContext.ApplicationRoles.Add(applicationRole);
+            seededApplicationRoles.Add(await applicationRoleRepository.Create(applicationRole, CancellationToken.None));
 
             applicationRole = new ApplicationRole()
             {
@@ -100,7 +104,7 @@ public class InMemoryDataSeeder : IDataSeeder
                 ApplicationId = application.Id,
                 Name = $"{application.Name}_reader"
             };
-            dataContext.ApplicationRoles.Add(applicationRole);
+            seededApplicationRoles.Add(await applicationRoleRepository.Create(applicationRole, CancellationToken.None));
 
             applicationRole = new ApplicationRole()
             {
@@ -108,7 +112,7 @@ public class InMemoryDataSeeder : IDataSeeder
                 ApplicationId = application.Id,
                 Name = $"{application.Name}_writer"
             };
-            dataContext.ApplicationRoles.Add(applicationRole);
+            seededApplicationRoles.Add(await applicationRoleRepository.Create(applicationRole, CancellationToken.None));
 
             applicationRole = new ApplicationRole()
             {
@@ -116,14 +120,13 @@ public class InMemoryDataSeeder : IDataSeeder
                 ApplicationId = application.Id,
                 Name = $"{application.Name}_admin"
             };
-            dataContext.ApplicationRoles.Add(applicationRole);
+            seededApplicationRoles.Add(await applicationRoleRepository.Create(applicationRole, CancellationToken.None));
         }
 
         logger.LogInformation("Application roles seeded");
-        return Task.CompletedTask;
     }
 
-    private Task SeedApplications()
+    private async Task SeedApplications()
     {
         var application = new Application()
         {
@@ -137,8 +140,8 @@ public class InMemoryDataSeeder : IDataSeeder
             Use2Fa = false,
             AuthorizationMethod = AuthorizationMethod.Password
         };
-        dataContext.Applications.Add(application);
-        testAplication = application;
+        testAplication = await applicationRepository.Create(application, CancellationToken.None);
+        seededApplications.Add(testAplication);
 
         application = new Application()
         {
@@ -152,8 +155,8 @@ public class InMemoryDataSeeder : IDataSeeder
             Use2Fa = false,
             AuthorizationMethod = AuthorizationMethod.Password
         };
-        dataContext.Applications.Add(application);
-        crmAplication = application;
+        crmAplication = await applicationRepository.Create(application, CancellationToken.None);
+        seededApplications.Add(crmAplication);
 
         application = new Application()
         {
@@ -167,42 +170,36 @@ public class InMemoryDataSeeder : IDataSeeder
             Use2Fa = false,
             AuthorizationMethod = AuthorizationMethod.Password
         };
-        dataContext.Applications.Add(application);
+        seededApplications.Add(await applicationRepository.Create(application, CancellationToken.None));
 
         logger.LogInformation("Applications seeded");
-        return Task.CompletedTask;
     }
-    private Task SeedUsers()
+    private async Task SeedUsers()
     {
         var user = new User()
         {
-            Id = new UserId(TesterUserId),
             Login = "tester@animato.cz",
             Name = "Tester",
             FullName = "Tester Tester",
             AuthorizationMethod = AuthorizationMethod.Password,
-            LastChanged = DateTime.UtcNow,
+            LastChanged = dateTime.UtcNow,
             TotpSecretKey = TesterUserId.ToString(),
         };
         user.UpdatePasswordAndHash(passwordHasher, "testpass");
-        dataContext.Users.Add(user);
-        testUser = user;
+        testUser = await userRepository.Create(user, new UserId(TesterUserId), CancellationToken.None);
 
         user = new User()
         {
-            Id = new UserId(AdminUserId),
             Login = "admin@animato.cz",
             Name = "Admin",
             FullName = "Admin Admin",
             AuthorizationMethod = AuthorizationMethod.TotpQrCode,
-            LastChanged = DateTime.UtcNow,
+            LastChanged = dateTime.UtcNow,
             TotpSecretKey = AdminUserId.ToString()
         };
         user.UpdatePasswordAndHash(passwordHasher, "adminpass");
-        dataContext.Users.Add(user);
-        adminUser = user;
+        adminUser = await userRepository.Create(user, new UserId(AdminUserId), CancellationToken.None);
 
         logger.LogInformation("Users seeded");
-        return Task.CompletedTask;
     }
 }

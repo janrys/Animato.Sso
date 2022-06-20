@@ -17,9 +17,14 @@ using Microsoft.AspNetCore.Mvc;
 [Route("")]
 public class OidcController : ApiControllerBase
 {
+    private readonly IDateTimeService dateTime;
     private readonly ILogger<OidcController> logger;
 
-    public OidcController(ISender mediator, ILogger<OidcController> logger) : base(mediator) => this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    public OidcController(ISender mediator, IDateTimeService dateTime, ILogger<OidcController> logger) : base(mediator)
+    {
+        this.dateTime = dateTime;
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
 
 
     /// <summary>
@@ -223,9 +228,9 @@ public class OidcController : ApiControllerBase
         var authProperties = new AuthenticationProperties
         {
             AllowRefresh = true,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
+            ExpiresUtc = dateTime.UtcNowOffset.AddHours(8),
             IsPersistent = true,
-            IssuedUtc = DateTimeOffset.UtcNow,
+            IssuedUtc = dateTime.UtcNowOffset,
             RedirectUri = "\\login"
         };
 

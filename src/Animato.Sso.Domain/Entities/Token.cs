@@ -17,6 +17,6 @@ public class Token
 
 public static class TokenExtensions
 {
-    public static bool IsExpired(this Token token) => DateTime.UtcNow > token.Expiration;
+    public static bool IsExpired(this Token token, DateTime utcNow) => utcNow > token.Expiration;
 }
 

@@ -12,9 +12,12 @@ using Microsoft.Extensions.Logging;
 public class InMemoryTokenRepository : ITokenRepository
 {
     private readonly List<Token> tokens;
+    private readonly IDateTimeService dateTime;
     private readonly ILogger<InMemoryTokenRepository> logger;
 
-    public InMemoryTokenRepository(InMemoryDataContext dataContext, ILogger<InMemoryTokenRepository> logger)
+    public InMemoryTokenRepository(InMemoryDataContext dataContext
+        , IDateTimeService dateTime
+        , ILogger<InMemoryTokenRepository> logger)
     {
         if (dataContext is null)
         {
@@ -22,6 +25,7 @@ public class InMemoryTokenRepository : ITokenRepository
         }
 
         tokens = dataContext.Tokens;
+        this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -124,7 +128,7 @@ public class InMemoryTokenRepository : ITokenRepository
     {
         try
         {
-            var removedTokens = tokens.RemoveAll(t => t.Expiration <= DateTime.UtcNow);
+            var removedTokens = tokens.RemoveAll(t => t.Expiration <= dateTime.UtcNow);
             return Task.FromResult(removedTokens);
         }
         catch (Exception exception)
@@ -148,7 +152,7 @@ public class InMemoryTokenRepository : ITokenRepository
 
             if (storedToken is not null)
             {
-                storedToken.Revoked = DateTime.UtcNow;
+                storedToken.Revoked = dateTime.UtcNow;
             }
 
             return Task.CompletedTask;
@@ -168,7 +172,7 @@ public class InMemoryTokenRepository : ITokenRepository
 
             if (storedTokens.Any())
             {
-                storedTokens.ToList().ForEach(t => t.Revoked = DateTime.UtcNow);
+                storedTokens.ToList().ForEach(t => t.Revoked = dateTime.UtcNow);
             }
 
             return Task.CompletedTask;

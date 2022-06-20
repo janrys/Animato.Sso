@@ -18,14 +18,19 @@ public class TokenFactory : ITokenFactory
     private readonly OidcOptions oidcOptions;
     private readonly IClaimFactory claimFactory;
     private readonly IMetadataService metadataService;
+    private readonly IDateTimeService dateTime;
     private static readonly char[] AlloweCharsForCode =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray();
 
-    public TokenFactory(OidcOptions oidcOptions, IClaimFactory claimFactory, IMetadataService metadataService)
+    public TokenFactory(OidcOptions oidcOptions
+        , IClaimFactory claimFactory
+        , IMetadataService metadataService
+        , IDateTimeService dateTime)
     {
         this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
         this.claimFactory = claimFactory ?? throw new ArgumentNullException(nameof(claimFactory));
         this.metadataService = metadataService ?? throw new ArgumentNullException(nameof(metadataService));
+        this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
     }
 
 
@@ -62,11 +67,11 @@ public class TokenFactory : ITokenFactory
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Issuer = metadataService.GetIssuer(),
-            NotBefore = DateTime.UtcNow,
-            IssuedAt = DateTime.Now,
+            NotBefore = dateTime.UtcNow,
+            IssuedAt = dateTime.Now,
             Audience = application.Code,
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
+            Expires = dateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -81,17 +86,17 @@ public class TokenFactory : ITokenFactory
         var claims = new List<SecurityClaims.Claim>(claimFactory.GenerateClaims(user, AuthorizationMethod.Unknown, roles))
         {
             new SecurityClaims.Claim("login", user.Login),
-            new SecurityClaims.Claim(JwtRegisteredClaimNames.AuthTime, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(GlobalOptions.Culture)),
+            new SecurityClaims.Claim(JwtRegisteredClaimNames.AuthTime, dateTime.UtcNowOffset.ToUnixTimeSeconds().ToString(GlobalOptions.Culture)),
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Issuer = metadataService.GetIssuer(),
-            NotBefore = DateTime.UtcNow,
-            IssuedAt = DateTime.UtcNow,
+            NotBefore = dateTime.UtcNow,
+            IssuedAt = dateTime.UtcNow,
             Audience = application.Code,
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
+            Expires = dateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);

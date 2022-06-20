@@ -10,4 +10,6 @@ public class StaticDateTimeService : IDateTimeService
     public DateTime Now => value.ToLocalTime();
 
     public DateTime UtcNow => value.ToUniversalTime();
+
+    public DateTimeOffset UtcNowOffset => UtcNow;
 }

@@ -23,6 +23,7 @@ public class GetTokenInfoQuery : IRequest<TokenInfo>
         private readonly IApplicationRepository applicationRepository;
         private readonly IMetadataService metadataService;
         private readonly ITokenFactory tokenFactory;
+        private readonly IDateTimeService dateTime;
         private readonly ILogger<GetTokenInfoQueryHandler> logger;
         private const string ERROR_LOADING_TOKEN = "Error loading token";
 
@@ -31,6 +32,7 @@ public class GetTokenInfoQuery : IRequest<TokenInfo>
             , IApplicationRepository applicationRepository
             , IMetadataService metadataService
             , ITokenFactory tokenFactory
+            , IDateTimeService dateTime
             , ILogger<GetTokenInfoQueryHandler> logger)
         {
             this.tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
@@ -38,6 +40,7 @@ public class GetTokenInfoQuery : IRequest<TokenInfo>
             this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
             this.metadataService = metadataService ?? throw new ArgumentNullException(nameof(metadataService));
             this.tokenFactory = tokenFactory ?? throw new ArgumentNullException(nameof(tokenFactory));
+            this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -48,7 +51,7 @@ public class GetTokenInfoQuery : IRequest<TokenInfo>
                 var token = await tokenRepository.GetToken(request.Token, cancellationToken);
                 TokenInfo tokenInfo;
 
-                if (token is null || token.Revoked.HasValue || token.IsExpired())
+                if (token is null || token.Revoked.HasValue || token.IsExpired(dateTime.UtcNow))
                 {
                     return new TokenInfo() { Active = false };
                 }

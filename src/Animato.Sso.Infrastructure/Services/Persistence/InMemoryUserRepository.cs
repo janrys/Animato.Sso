@@ -15,9 +15,12 @@ public class InMemoryUserRepository : IUserRepository
     private readonly List<User> users;
     private readonly List<UserApplicationRole> userApplicationRoles;
     private readonly List<ApplicationRole> applicationRoles;
+    private readonly IDateTimeService dateTime;
     private readonly ILogger<InMemoryUserRepository> logger;
 
-    public InMemoryUserRepository(InMemoryDataContext dataContext, ILogger<InMemoryUserRepository> logger)
+    public InMemoryUserRepository(InMemoryDataContext dataContext
+        , IDateTimeService dateTime
+        , ILogger<InMemoryUserRepository> logger)
     {
         if (dataContext is null)
         {
@@ -27,6 +30,7 @@ public class InMemoryUserRepository : IUserRepository
         users = dataContext.Users;
         userApplicationRoles = dataContext.UserApplicationRoles;
         applicationRoles = dataContext.ApplicationRoles;
+        this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -43,7 +47,7 @@ public class InMemoryUserRepository : IUserRepository
         try
         {
             user.Id = userId;
-            user.LastChanged = DateTime.UtcNow;
+            user.LastChanged = dateTime.UtcNow;
             users.Add(user);
             return Task.FromResult(user);
         }
@@ -70,7 +74,7 @@ public class InMemoryUserRepository : IUserRepository
                 throw new NotFoundException(nameof(User), user.Id);
             }
 
-            user.LastChanged = DateTime.UtcNow;
+            user.LastChanged = dateTime.UtcNow;
             users.Remove(storedUser);
             users.Add(user);
 
@@ -236,7 +240,7 @@ public class InMemoryUserRepository : IUserRepository
 
             if (user is not null)
             {
-                user.LastChanged = DateTime.UtcNow;
+                user.LastChanged = dateTime.UtcNow;
             }
 
             return Task.CompletedTask;

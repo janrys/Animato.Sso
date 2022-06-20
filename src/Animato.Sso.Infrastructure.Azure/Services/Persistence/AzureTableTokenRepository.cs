@@ -17,11 +17,15 @@ public class AzureTableTokenRepository : ITokenRepository
     private TableClient Table => dataContext.Tokens;
     private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
+    private readonly IDateTimeService dateTime;
     private readonly ILogger<AzureTableTokenRepository> logger;
 
-    public AzureTableTokenRepository(AzureTableStorageDataContext dataContext, ILogger<AzureTableTokenRepository> logger)
+    public AzureTableTokenRepository(AzureTableStorageDataContext dataContext
+        , IDateTimeService dateTime
+        , ILogger<AzureTableTokenRepository> logger)
     {
         this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
+        this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -145,7 +149,7 @@ public class AzureTableTokenRepository : ITokenRepository
         try
         {
             var storedTokens = new List<TokenTableEntity>();
-            var queryResult = Table.QueryAsync<TokenTableEntity>(t => t.Expiration <= DateTime.UtcNow, cancellationToken: cancellationToken);
+            var queryResult = Table.QueryAsync<TokenTableEntity>(t => t.Expiration <= dateTime.UtcNow, cancellationToken: cancellationToken);
 
             await queryResult.AsPages()
                 .ForEachAsync(page => storedTokens.AddRange(page.Values), cancellationToken)
@@ -179,7 +183,7 @@ public class AzureTableTokenRepository : ITokenRepository
 
         if (storedToken is not null)
         {
-            storedToken.Revoked = DateTime.UtcNow;
+            storedToken.Revoked = dateTime.UtcNow;
         }
 
         await UpdateToken(storedToken, cancellationToken);
@@ -223,7 +227,7 @@ public class AzureTableTokenRepository : ITokenRepository
 
             if (storedTokens.Any())
             {
-                storedTokens.ToList().ForEach(t => t.Revoked = DateTime.UtcNow);
+                storedTokens.ToList().ForEach(t => t.Revoked = dateTime.UtcNow);
             }
 
             await AzureTableStorageDataContext.BatchManipulateEntities(Table

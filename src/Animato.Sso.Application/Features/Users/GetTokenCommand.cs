@@ -51,7 +51,7 @@ public class GetTokenCommand : IRequest<TokenResult>
             try
             {
                 var grantType = GrantType.GetAll().FirstOrDefault(g => g.GrantCode
-                    .Equals(request.TokenRequest.GrantType.Trim().ToLower(DefaultOptions.Culture),
+                    .Equals(request.TokenRequest.GrantType.Trim().ToLower(GlobalOptions.Culture),
                     StringComparison.OrdinalIgnoreCase));
 
                 if (grantType is null)

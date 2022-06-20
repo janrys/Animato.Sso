@@ -5,14 +5,15 @@ using Animato.Sso.WebApi.Extensions;
 using Serilog;
 
 Log.Logger = Animato.Sso.WebApi.Extensions.ApplicationBuilderExtensions.CreateLogger();
-Log.Information("Starting up");
+var assemblyName = System.Reflection.Assembly.GetEntryAssembly().GetName();
+Log.Information("Starting up {Application} {Version}", assemblyName.Name, assemblyName.Version);
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
 
     builder.Configuration.AddCustomConfiguration(builder.Environment.EnvironmentName);
-    builder.AddCustomLogging();
+    builder.AddCustomLogging(builder.Configuration);
     builder.Services.AddApplication(builder.Configuration);
     builder.Services
         .AddInfrastructure(builder.Configuration)
@@ -50,7 +51,7 @@ catch (Exception exception)
 }
 finally
 {
-    Log.Information("Shut down complete");
+    Log.Information("Shut down complete {Application} {Version}", assemblyName.Name, assemblyName.Version);
     Log.CloseAndFlush();
 }
 

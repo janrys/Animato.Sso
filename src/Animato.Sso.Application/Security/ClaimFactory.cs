@@ -29,7 +29,7 @@ public class ClaimFactory : IClaimFactory
             new SecurityClaims.Claim("name", user.Name),
             new SecurityClaims.Claim("full_name", user.FullName),
             new SecurityClaims.Claim(ClaimTypes.Sid, user.Id.Value.ToString()),
-            new SecurityClaims.Claim("last_changed", user.LastChanged.ToUniversalTime().ToString(DefaultOptions.DatePattern, DefaultOptions.Culture))
+            new SecurityClaims.Claim("last_changed", user.LastChanged.ToUniversalTime().ToString(GlobalOptions.DatePattern, GlobalOptions.Culture))
         };
 
         if (roles is not null && roles.Any())

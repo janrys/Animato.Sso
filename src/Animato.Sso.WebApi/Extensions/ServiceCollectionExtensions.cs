@@ -3,6 +3,7 @@ namespace Animato.Sso.WebApi.Extensions;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.WebApi.BackgroundServices;
 using Animato.Sso.WebApi.Filters;
@@ -25,15 +26,33 @@ public static class ServiceCollectionExtensions
             .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables();
 
-    public static WebApplicationBuilder AddCustomLogging(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddCustomLogging(this WebApplicationBuilder builder, IConfiguration configuration)
     {
+        var globalOptions = new GlobalOptions();
+        configuration.Bind(GlobalOptions.ConfigurationKey, globalOptions);
+
+        var logLevel = LogEventLevel.Information;
+        if (Enum.TryParse<LogEventLevel>(globalOptions.LogLevel, true, out var parsedLogLevel))
+        {
+            logLevel = parsedLogLevel;
+        }
+
+        var msLogLevel = LogEventLevel.Information;
+
+        if (logLevel is LogEventLevel.Warning or LogEventLevel.Error or LogEventLevel.Fatal)
+        {
+            msLogLevel = logLevel;
+        }
+
         builder.Logging.ClearProviders();
         builder.Host.UseSerilog((context, services, configuration) => configuration
                     .ReadFrom.Configuration(context.Configuration)
                     .ReadFrom.Services(services)
-                    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                    .MinimumLevel.Override("Microsoft", msLogLevel)
+                    .MinimumLevel.Is(logLevel)
                     .Enrich.FromLogContext()
                     .WriteTo.Async(a => a.Console()));
+
         return builder;
     }
 

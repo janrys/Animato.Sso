@@ -1,6 +1,7 @@
 namespace Animato.Sso.Infrastructure.AzureStorage;
 
 using System.Reflection;
+using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Infrastructure.AzureStorage.Services.Persistence;
 using Microsoft.Extensions.Configuration;
@@ -12,20 +13,23 @@ public static class DependencyInjection
     {
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-        var azureTableOptions = new AzureTableStorageOptions();
-        configuration.Bind(AzureTableStorageOptions.ConfigurationKey, azureTableOptions);
-        services.AddSingleton(azureTableOptions);
+        var globalOptions = new GlobalOptions();
+        configuration.Bind(GlobalOptions.ConfigurationKey, globalOptions);
 
-        if (configuration["Database"].Equals("azuretable", StringComparison.OrdinalIgnoreCase))
+        if (globalOptions.Persistence.Equals("azuretable", StringComparison.OrdinalIgnoreCase))
         {
-            services.AddAzureTablePersistence();
+            services.AddAzureTablePersistence(configuration);
         }
 
         return services;
     }
 
-    private static IServiceCollection AddAzureTablePersistence(this IServiceCollection services)
+    private static IServiceCollection AddAzureTablePersistence(this IServiceCollection services, IConfiguration configuration)
     {
+        var azureTableOptions = new AzureTableStorageOptions();
+        configuration.Bind(AzureTableStorageOptions.ConfigurationKey, azureTableOptions);
+        services.AddSingleton(azureTableOptions);
+
         services.AddSingleton<AzureTableStorageDataContext>();
         services.AddSingleton<IUserRepository, AzureTableUserRepository>();
         services.AddSingleton<IApplicationRepository, AzureTableApplicationRepository>();

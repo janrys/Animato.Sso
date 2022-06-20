@@ -108,7 +108,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
 
         private Task<AuthorizationResult> AuthorizeUser(User user, Application application, IEnumerable<ApplicationRole> userRoles, AuthorizationRequest authorizationRequest, CancellationToken cancellationToken)
         {
-            var responseType = authorizationRequest.ResponseType.Trim().ToLower(DefaultOptions.Culture);
+            var responseType = authorizationRequest.ResponseType.Trim().ToLower(GlobalOptions.Culture);
 
             if (responseType.Equals(AuthorizationFlowType.Code.RequestCode, StringComparison.OrdinalIgnoreCase))
             {

@@ -81,7 +81,7 @@ public class TokenFactory : ITokenFactory
         var claims = new List<SecurityClaims.Claim>(claimFactory.GenerateClaims(user, AuthorizationMethod.Unknown, roles))
         {
             new SecurityClaims.Claim("login", user.Login),
-            new SecurityClaims.Claim(JwtRegisteredClaimNames.AuthTime, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(DefaultOptions.Culture)),
+            new SecurityClaims.Claim(JwtRegisteredClaimNames.AuthTime, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(GlobalOptions.Culture)),
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor

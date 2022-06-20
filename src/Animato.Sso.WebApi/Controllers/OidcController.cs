@@ -108,7 +108,7 @@ public class OidcController : ApiControllerBase
             var user = await this.QueryForCurrentUser(cancellationToken).User.GetById(User.GetUserId());
             var lastChanged = User.Claims.FirstOrDefault(c => c.Type == "last_changed")?.Value;
 
-            if (!DateTime.TryParse(lastChanged, DefaultOptions.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
+            if (!DateTime.TryParse(lastChanged, GlobalOptions.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
                 || DateTime.SpecifyKind(lastChangedParsed, DateTimeKind.Utc) < user.LastChanged.AddSeconds(-1))
             {
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -279,7 +279,7 @@ public class OidcController : ApiControllerBase
         }
 
         var lastChanged = User.Claims.FirstOrDefault(c => c.Type == "last_changed")?.Value;
-        if (!DateTime.TryParse(lastChanged, DefaultOptions.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
+        if (!DateTime.TryParse(lastChanged, GlobalOptions.Culture, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out var lastChangedParsed)
             || DateTime.SpecifyKind(lastChangedParsed, DateTimeKind.Utc) < user.LastChanged.AddSeconds(-1))
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

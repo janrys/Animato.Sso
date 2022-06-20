@@ -13,6 +13,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
+        var globalOptions = new GlobalOptions();
+        configuration.Bind(GlobalOptions.ConfigurationKey, globalOptions);
+        services.AddSingleton(globalOptions);
+
         var oidcOptions = new OidcOptions();
         configuration.Bind(OidcOptions.ConfigurationKey, oidcOptions);
         services.AddSingleton(oidcOptions);

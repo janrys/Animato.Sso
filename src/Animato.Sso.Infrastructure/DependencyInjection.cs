@@ -1,6 +1,7 @@
 namespace Animato.Sso.Infrastructure;
 
 using System.Reflection;
+using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Infrastructure.Services;
 using Animato.Sso.Infrastructure.Services.Messaging;
@@ -16,7 +17,10 @@ public static class DependencyInjection
     {
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-        if (configuration["Database"].Equals("inmemory", StringComparison.OrdinalIgnoreCase))
+        var globalOptions = new GlobalOptions();
+        configuration.Bind(GlobalOptions.ConfigurationKey, globalOptions);
+
+        if (globalOptions.Persistence.Equals("inmemory", StringComparison.OrdinalIgnoreCase))
         {
             services.AddInMemoryPersistence();
         }

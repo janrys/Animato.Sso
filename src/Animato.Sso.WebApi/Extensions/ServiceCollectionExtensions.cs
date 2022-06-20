@@ -78,7 +78,6 @@ public static class ServiceCollectionExtensions
             options.EnableAnnotations();
 
             options.SchemaFilter<CamelCasingPropertiesFilter>();
-            options.ParameterFilter<LogoTypeParameterFilter>();
 
             if (includeXmlComments)
             {

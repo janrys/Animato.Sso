@@ -21,4 +21,8 @@
     <PackageReference Include="StronglyTypedId" Version="1.0.0-beta06" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Events\" />
+  </ItemGroup>
 </Project>

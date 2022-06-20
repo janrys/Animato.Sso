@@ -5,6 +5,7 @@ using Animato.Sso.WebApi.Extensions;
 using Serilog;
 
 Log.Logger = Animato.Sso.WebApi.Extensions.ApplicationBuilderExtensions.CreateLogger();
+Log.Information("Starting up");
 
 try
 {
@@ -49,6 +50,7 @@ catch (Exception exception)
 }
 finally
 {
+    Log.Information("Shut down complete");
     Log.CloseAndFlush();
 }
 

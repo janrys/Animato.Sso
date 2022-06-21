@@ -46,7 +46,8 @@ public static class UserExensions
 
     public static CreateUserModel ValidateAndSanitize(this CreateUserModel user
         , OidcOptions oidcOptions
-        , ITokenFactory tokenFactory)
+        , ITokenFactory tokenFactory
+        , IPasswordFactory passwordFactory)
     {
         if (string.IsNullOrEmpty(user.Login))
         {
@@ -57,7 +58,17 @@ public static class UserExensions
 
         if (string.IsNullOrEmpty(user.Password))
         {
-            user.Password = tokenFactory.GenerateRandomString(oidcOptions.UserPasswordLength);
+            user.Password = tokenFactory.GenerateRandomString(oidcOptions.DefaultUserPasswordLength);
+        }
+        else
+        {
+            var passwordStrength = passwordFactory.CheckPasswordStrength(user.Password);
+            if (passwordStrength.Strength.Value <= oidcOptions.MinimalPasswordStrength)
+            {
+                throw new Exceptions.ValidationException(
+                Exceptions.ValidationException.CreateFailure(nameof(user.Password)
+                , $"Password is too weak, score {passwordStrength.Strength.Value} - {passwordStrength.Strength.Name}. Reason: {passwordStrength.Warning}"));
+            }
         }
 
         if (string.IsNullOrEmpty(user.TotpSecretKey))

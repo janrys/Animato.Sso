@@ -1,6 +1,8 @@
 namespace Animato.Sso.Domain.Enums;
 
-public class AuthorizationFlowType : Enumeration
+using Ardalis.SmartEnum;
+
+public sealed class AuthorizationFlowType : SmartEnum<AuthorizationFlowType>
 {
     /// <summary>
     /// Authorization code flow
@@ -25,10 +27,6 @@ public class AuthorizationFlowType : Enumeration
     /// <param name="value">Numeric value</param>
     /// <param name="name">Text description</param>
     /// <param name="requestCode">Code used in authorization request</param>
-    public AuthorizationFlowType(int value, string name, string requestCode) : base(value, name)
+    public AuthorizationFlowType(int value, string name, string requestCode) : base(name, value)
         => RequestCode = requestCode;
-
-    public static AuthorizationFlowType FromValue(int value) => FromValue<AuthorizationFlowType>(value);
-    public static AuthorizationFlowType FromName(string name) => FromName<AuthorizationFlowType>(name);
-    public static IEnumerable<AuthorizationFlowType> GetAll() => GetAll<AuthorizationFlowType>();
 }

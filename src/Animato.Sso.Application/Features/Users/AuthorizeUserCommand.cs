@@ -125,7 +125,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
             {
                 throw new Exceptions.ValidationException(
                     Exceptions.ValidationException.CreateFailure(authorizationRequest.ResponseType
-                    , $"Response type value {authorizationRequest.ResponseType} is invalid. Allowed values are {string.Join(", ", AuthorizationFlowType.GetAll().Select(f => f.RequestCode))}"));
+                    , $"Response type value {authorizationRequest.ResponseType} is invalid. Allowed values are {string.Join(", ", AuthorizationFlowType.List.Select(f => f.RequestCode))}"));
             }
         }
 

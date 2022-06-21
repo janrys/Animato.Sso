@@ -474,10 +474,14 @@ public class OidcController : ApiControllerBase
     /// <param name="metadataService"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <param name="linkGenerator"></param>
+    /// <param name="oidcOptions"></param>
     /// <returns>Metadata</returns>
     [HttpGet("/.well-known/oauth-authorization-server", Name = "Metadata")]
     [HttpGet("/.well-known/openid-configuration", Name = "MetadataOidc")]
-    public async Task<IActionResult> Metadata([FromServices] IMetadataService metadataService, [FromServices] LinkGenerator linkGenerator, CancellationToken cancellationToken)
+    public async Task<IActionResult> Metadata([FromServices] IMetadataService metadataService
+        , [FromServices] LinkGenerator linkGenerator
+        , [FromServices] OidcOptions oidcOptions
+        , CancellationToken cancellationToken)
     {
         logger.LogDebug("Executing action {Action}", nameof(Metadata));
 
@@ -490,6 +494,7 @@ public class OidcController : ApiControllerBase
             TokenEndpoint = linkGenerator.GetUriByAction(HttpContext, "Token"),
             RevocationEndpoint = linkGenerator.GetUriByAction(HttpContext, "Revoke"),
             ResponseTypesSupported = new List<string>(new string[] { "code", "token" }),
+            MinimalPasswordLength = oidcOptions.MinimalPasswordLength
         };
         return Ok(metadata);
     }

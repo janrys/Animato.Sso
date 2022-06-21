@@ -1,6 +1,8 @@
 namespace Animato.Sso.Domain.Enums;
 
-public class PermissionType : Enumeration
+using Ardalis.SmartEnum;
+
+public sealed class PermissionType : SmartEnum<PermissionType>
 {
     /// <summary>
     /// Default brand for new partners
@@ -17,11 +19,7 @@ public class PermissionType : Enumeration
     /// </summary>
     /// <param name="value">Numeric value</param>
     /// <param name="name">Text description</param>
-    public PermissionType(int value, string name) : base(value, name)
+    public PermissionType(int value, string name) : base(name, value)
     {
     }
-
-    public static PermissionType FromValue(int value) => FromValue<PermissionType>(value);
-    public static PermissionType FromName(string name) => FromName<PermissionType>(name);
-    public static IEnumerable<PermissionType> GetAll() => GetAll<PermissionType>();
 }

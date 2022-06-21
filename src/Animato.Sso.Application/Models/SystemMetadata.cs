@@ -76,4 +76,12 @@ public class SystemMetadata
     [JsonProperty("ui_locales_supported")]
     [JsonPropertyName("ui_locales_supported")]
     public List<string> UiLocalesSupported { get; set; }
+
+    [JsonProperty("minimal_password_length")]
+    [JsonPropertyName("minimal_password_length")]
+    public int MinimalPasswordLength { get; set; }
+
+    [JsonProperty("correlation_header_name")]
+    [JsonPropertyName("correlation_header_name")]
+    public string CorrelationHeaderName { get; set; }
 }

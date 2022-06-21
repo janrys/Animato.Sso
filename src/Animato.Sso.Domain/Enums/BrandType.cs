@@ -1,6 +1,8 @@
 namespace Animato.Sso.Domain.Enums;
 
-public class BrandType : Enumeration
+using Ardalis.SmartEnum;
+
+public sealed class BrandType : SmartEnum<BrandType>
 {
     /// <summary>
     /// Default brand for new partners
@@ -22,11 +24,7 @@ public class BrandType : Enumeration
     /// </summary>
     /// <param name="value">Numeric value</param>
     /// <param name="name">Text description</param>
-    public BrandType(int value, string name) : base(value, name)
+    public BrandType(int value, string name) : base(name, value)
     {
     }
-
-    public static BrandType FromValue(int value) => FromValue<BrandType>(value);
-    public static BrandType FromName(string name) => FromName<BrandType>(name);
-    public static IEnumerable<BrandType> GetAll() => GetAll<BrandType>();
 }

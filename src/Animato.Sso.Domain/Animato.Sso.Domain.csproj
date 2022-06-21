@@ -18,6 +18,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ardalis.SmartEnum" Version="2.1.0" />
+    <PackageReference Include="Ardalis.SmartEnum.JsonNet" Version="2.1.0" />
+    <PackageReference Include="Ardalis.SmartEnum.SystemTextJson" Version="2.1.0" />
     <PackageReference Include="StronglyTypedId" Version="1.0.0-beta06" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>

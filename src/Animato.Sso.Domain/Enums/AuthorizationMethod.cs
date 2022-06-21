@@ -1,6 +1,8 @@
 namespace Animato.Sso.Domain.Enums;
 
-public class AuthorizationMethod : Enumeration
+using Ardalis.SmartEnum;
+
+public sealed class AuthorizationMethod : SmartEnum<AuthorizationMethod>
 {
     /// <summary>
     /// User name and password
@@ -27,11 +29,7 @@ public class AuthorizationMethod : Enumeration
     /// </summary>
     /// <param name="value">Numeric value</param>
     /// <param name="name">Text description</param>
-    public AuthorizationMethod(int value, string name) : base(value, name)
+    public AuthorizationMethod(int value, string name) : base(name, value)
     {
     }
-
-    public static AuthorizationMethod FromValue(int value) => FromValue<AuthorizationMethod>(value);
-    public static AuthorizationMethod FromName(string name) => FromName<AuthorizationMethod>(name);
-    public static IEnumerable<AuthorizationMethod> GetAll() => GetAll<AuthorizationMethod>();
 }

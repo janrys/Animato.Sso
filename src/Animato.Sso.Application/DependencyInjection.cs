@@ -29,7 +29,7 @@ public static class DependencyInjection
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehaviour<,>));
         services.AddSingleton<IAuthorizationService, StaticMapAuthorizationService>();
-        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<IPasswordFactory, PasswordFactory>();
         services.AddSingleton<IClaimFactory, ClaimFactory>();
         services.AddSingleton<ITokenFactory, TokenFactory>();
 

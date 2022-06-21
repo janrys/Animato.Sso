@@ -12,8 +12,7 @@ using Microsoft.Extensions.Logging;
 
 public class DataSeeder : IDataSeeder
 {
-
-    private readonly IPasswordHasher passwordHasher;
+    private readonly IPasswordFactory passwordHasher;
     private readonly OidcOptions oidcOptions;
     private readonly IUserRepository userRepository;
     private readonly IApplicationRepository applicationRepository;
@@ -32,7 +31,7 @@ public class DataSeeder : IDataSeeder
     private static readonly Guid AdminUserId = Guid.Parse("551845DC-0000-0000-0000-F401AF408965");
     private static readonly Guid TesterUserId = Guid.Parse("661845DC-0000-0000-0000-F401AF408966");
 
-    public DataSeeder(IPasswordHasher passwordHasher
+    public DataSeeder(IPasswordFactory passwordHasher
         , OidcOptions oidcOptions
         , IUserRepository userRepository
         , IApplicationRepository applicationRepository

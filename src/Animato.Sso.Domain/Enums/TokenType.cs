@@ -1,6 +1,8 @@
 namespace Animato.Sso.Domain.Enums;
 
-public class TokenType : Enumeration
+using Ardalis.SmartEnum;
+
+public sealed class TokenType : SmartEnum<TokenType>
 {
     /// <summary>
     /// Access token
@@ -22,11 +24,7 @@ public class TokenType : Enumeration
     /// </summary>
     /// <param name="value">Numeric value</param>
     /// <param name="name">Text description</param>
-    public TokenType(int value, string name) : base(value, name)
+    public TokenType(int value, string name) : base(name, value)
     {
     }
-
-    public static TokenType FromValue(int value) => FromValue<TokenType>(value);
-    public static TokenType FromName(string name) => FromName<TokenType>(name);
-    public static IEnumerable<TokenType> GetAll() => GetAll<TokenType>();
 }

@@ -1,6 +1,8 @@
 namespace Animato.Sso.Domain.Enums;
 
-public class HashAlgorithmType : Enumeration
+using Ardalis.SmartEnum;
+
+public sealed class HashAlgorithmType : SmartEnum<HashAlgorithmType>
 {
     /// <summary>
     /// SHA256
@@ -18,9 +20,5 @@ public class HashAlgorithmType : Enumeration
     /// </summary>
     /// <param name="value">Numeric value</param>
     /// <param name="name">Text description</param>
-    public HashAlgorithmType(int value, string name) : base(value, name) { }
-
-    public static HashAlgorithmType FromValue(int value) => FromValue<HashAlgorithmType>(value);
-    public static HashAlgorithmType FromName(string name) => FromName<HashAlgorithmType>(name);
-    public static IEnumerable<HashAlgorithmType> GetAll() => GetAll<HashAlgorithmType>();
+    public HashAlgorithmType(int value, string name) : base(name, value) { }
 }

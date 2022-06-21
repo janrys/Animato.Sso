@@ -39,14 +39,14 @@ public class CreateUserCommand : IRequest<User>
         private readonly IUserRepository userRepository;
         private readonly ITokenFactory tokenFactory;
         private readonly ILogger<CreateUserCommandHandler> logger;
-        private readonly IPasswordHasher passwordHasher;
+        private readonly IPasswordFactory passwordFactory;
         private readonly IDateTimeService dateTime;
         private const string ERROR_CREATING_USER = "Error creating user";
 
         public CreateUserCommandHandler(OidcOptions oidcOptions
             , IUserRepository userRepository
             , ITokenFactory tokenFactory
-            , IPasswordHasher passwordHasher
+            , IPasswordFactory passwordFactory
             , IDateTimeService dateTime
             , ILogger<CreateUserCommandHandler> logger)
         {
@@ -54,7 +54,7 @@ public class CreateUserCommand : IRequest<User>
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.tokenFactory = tokenFactory ?? throw new ArgumentNullException(nameof(tokenFactory));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
+            this.passwordFactory = passwordFactory ?? throw new ArgumentNullException(nameof(passwordFactory));
             this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         }
 
@@ -71,9 +71,9 @@ public class CreateUserCommand : IRequest<User>
                         , $"User with {nameof(request.UserModel.Login)} {request.UserModel.Login} already exists"));
                 }
 
-                request.UserModel.ValidateAndSanitize(oidcOptions, tokenFactory);
+                request.UserModel.ValidateAndSanitize(oidcOptions, tokenFactory, passwordFactory);
                 user = new User();
-                user.UpdatePasswordAndHash(passwordHasher, dateTime);
+                user.UpdatePasswordAndHash(passwordFactory, dateTime);
                 user = request.UserModel.ApplyTo(user);
                 return await userRepository.Create(user, cancellationToken);
             }

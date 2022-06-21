@@ -53,7 +53,7 @@ public class GetTokenCommand : IRequest<TokenResult>
         {
             try
             {
-                var grantType = GrantType.GetAll().FirstOrDefault(g => g.GrantCode
+                var grantType = GrantType.List.FirstOrDefault(g => g.GrantCode
                     .Equals(request.TokenRequest.GrantType.Trim().ToLower(GlobalOptions.Culture),
                     StringComparison.OrdinalIgnoreCase));
 
@@ -61,7 +61,7 @@ public class GetTokenCommand : IRequest<TokenResult>
                 {
                     throw new Exceptions.ValidationException(
                         Exceptions.ValidationException.CreateFailure(request.TokenRequest.GrantType
-                        , $"Response type value {request.TokenRequest.GrantType} is invalid. Allowed values are {string.Join(", ", GrantType.GetAll().Select(f => f.GrantCode))}"));
+                        , $"Response type value {request.TokenRequest.GrantType} is invalid. Allowed values are {string.Join(", ", GrantType.List.Select(f => f.GrantCode))}"));
                 }
 
                 AuthorizationCode code;
@@ -117,7 +117,7 @@ public class GetTokenCommand : IRequest<TokenResult>
                 {
                     throw new Exceptions.ValidationException(
                         Exceptions.ValidationException.CreateFailure(grantType.GrantCode
-                        , $"Response type value {grantType.GrantCode} is invalid. Allowed values are {string.Join(", ", GrantType.GetAll().Select(f => f.GrantCode))}"));
+                        , $"Response type value {grantType.GrantCode} is invalid. Allowed values are {string.Join(", ", GrantType.List.Select(f => f.GrantCode))}"));
                 }
 
                 var application = await applicationRepository.GetById(applicationId, cancellationToken);
@@ -156,7 +156,7 @@ public class GetTokenCommand : IRequest<TokenResult>
                 {
                     throw new Exceptions.ValidationException(
                         Exceptions.ValidationException.CreateFailure(grantType.GrantCode
-                        , $"Response type value {grantType.GrantCode} is invalid. Allowed values are {string.Join(", ", GrantType.GetAll().Select(f => f.GrantCode))}"));
+                        , $"Response type value {grantType.GrantCode} is invalid. Allowed values are {string.Join(", ", GrantType.List.Select(f => f.GrantCode))}"));
                 }
 
                 return tokenResult;

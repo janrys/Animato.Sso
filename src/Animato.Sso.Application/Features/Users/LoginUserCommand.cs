@@ -32,11 +32,11 @@ public class LoginUserCommand : IRequest<User>
     public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, User>
     {
         private readonly IUserRepository userRepository;
-        private readonly IPasswordHasher passwordHasher;
+        private readonly IPasswordFactory passwordHasher;
         private readonly ILogger<LoginUserCommandHandler> logger;
         private const string ERROR_LOADING_USER = "Error loading user";
 
-        public LoginUserCommandHandler(IUserRepository userRepository, IPasswordHasher passwordHasher, ILogger<LoginUserCommandHandler> logger)
+        public LoginUserCommandHandler(IUserRepository userRepository, IPasswordFactory passwordHasher, ILogger<LoginUserCommandHandler> logger)
         {
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));

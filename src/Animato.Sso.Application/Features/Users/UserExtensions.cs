@@ -4,13 +4,14 @@ using Animato.Sso.Domain.Entities;
 
 public static class UserExtensions
 {
-    public static User UpdatePasswordAndHash(this User user, IPasswordHasher passwordHasher)
-     => user.UpdatePasswordAndHash(passwordHasher, user.Password);
+    public static User UpdatePasswordAndHash(this User user, IPasswordHasher passwordHasher, IDateTimeService dateTime)
+     => user.UpdatePasswordAndHash(passwordHasher, user.Password, dateTime);
 
-    public static User UpdatePasswordAndHash(this User user, IPasswordHasher passwordHasher, string password)
+    public static User UpdatePasswordAndHash(this User user, IPasswordHasher passwordHasher, string password, IDateTimeService dateTime)
     {
         user.Salt = passwordHasher.GenerateSalt();
-        user.Password = passwordHasher.HashPassword(password, user.Salt);
+        user.Password = passwordHasher.HashPassword(password, user.Salt, user.PasswordHashAlgorithm);
+        user.PasswordLastChanged = dateTime.UtcNow;
         return user;
     }
 }

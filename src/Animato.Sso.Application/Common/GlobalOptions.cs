@@ -11,4 +11,5 @@ public class GlobalOptions
     public string ApplicationInsightsKey { get; set; } = "";
     public bool LogToAzureDiagnosticsStream { get; set; } = false;
     public string CorrelationHeaderName { get; set; } = "x-correlation-id";
+    public string HashAlgorithmType { get; set; } = "SHA256";
 }

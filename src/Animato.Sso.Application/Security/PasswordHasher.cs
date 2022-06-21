@@ -2,6 +2,7 @@ namespace Animato.Sso.Application.Security;
 
 using System.Security.Cryptography;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Domain.Enums;
 
 public class PasswordHasher : IPasswordHasher
 {
@@ -14,13 +15,29 @@ public class PasswordHasher : IPasswordHasher
         RandomNumberGenerator.Fill(saltBytes);
         return Convert.ToBase64String(saltBytes);
     }
-    public string HashPassword(string password, string salt)
+    public string HashPassword(string password, string salt, HashAlgorithmType hashAlgorithm)
     {
         var saltBytes = Convert.FromBase64String(salt);
-        var key = new Rfc2898DeriveBytes(password, saltBytes, IterationCount, HashAlgorithmName.SHA256);
+
+        HashAlgorithmName hashAlgorithmName;
+
+        if (hashAlgorithm == HashAlgorithmType.SHA256)
+        {
+            hashAlgorithmName = HashAlgorithmName.SHA256;
+        }
+        else if (hashAlgorithm == HashAlgorithmType.SHA512)
+        {
+            hashAlgorithmName = HashAlgorithmName.SHA512;
+        }
+        else
+        {
+            throw new ArgumentOutOfRangeException(nameof(hashAlgorithm), $"Unsupported hash algorithm {hashAlgorithm.Name}");
+        }
+
+        var key = new Rfc2898DeriveBytes(password, saltBytes, IterationCount, hashAlgorithmName);
         return Convert.ToBase64String(key.GetBytes(PasswordBytesCount));
     }
 
-    public bool IsValid(string passwordHash, string password, string salt)
-        => passwordHash.Equals(HashPassword(password, salt), StringComparison.OrdinalIgnoreCase);
+    public bool IsValid(string passwordHash, string password, string salt, HashAlgorithmType hashAlgorithm)
+        => passwordHash.Equals(HashPassword(password, salt, hashAlgorithm), StringComparison.OrdinalIgnoreCase);
 }

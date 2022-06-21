@@ -28,6 +28,8 @@ public class UserTableEntity : ITableEntity
     public string FullName { get; set; }
     public string Salt { get; set; }
     public string Password { get; set; }
+    public string PasswordHashAlgorithm { get; set; }
+    public DateTime PasswordLastChanged { get; set; }
     public string TotpSecretKey { get; set; }
     public string AuthorizationMethod { get; set; }
     public DateTime LastChanged { get; set; }
@@ -52,7 +54,9 @@ public static class UserTableEntityExtensions
          AuthorizationMethod = Domain.Enums.AuthorizationMethod.FromName(tableEntity.AuthorizationMethod),
          LastChanged = tableEntity.LastChanged,
          IsDeleted = tableEntity.IsDeleted,
-         IsBlocked = tableEntity.IsBlocked
+         IsBlocked = tableEntity.IsBlocked,
+         PasswordHashAlgorithm = Domain.Enums.HashAlgorithmType.FromName(tableEntity.PasswordHashAlgorithm),
+         PasswordLastChanged = tableEntity.PasswordLastChanged,
      };
 
     public static UserTableEntity ToTableEntity(this User user)
@@ -66,6 +70,8 @@ public static class UserTableEntityExtensions
          AuthorizationMethod = user.AuthorizationMethod.Name,
          LastChanged = user.LastChanged,
          IsDeleted = user.IsDeleted,
-         IsBlocked = user.IsBlocked
+         IsBlocked = user.IsBlocked,
+         PasswordHashAlgorithm = user.PasswordHashAlgorithm.Name,
+         PasswordLastChanged = user.PasswordLastChanged,
      };
 }

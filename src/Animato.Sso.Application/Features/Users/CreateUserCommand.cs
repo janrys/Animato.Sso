@@ -40,12 +40,14 @@ public class CreateUserCommand : IRequest<User>
         private readonly ITokenFactory tokenFactory;
         private readonly ILogger<CreateUserCommandHandler> logger;
         private readonly IPasswordHasher passwordHasher;
+        private readonly IDateTimeService dateTime;
         private const string ERROR_CREATING_USER = "Error creating user";
 
         public CreateUserCommandHandler(OidcOptions oidcOptions
             , IUserRepository userRepository
             , ITokenFactory tokenFactory
             , IPasswordHasher passwordHasher
+            , IDateTimeService dateTime
             , ILogger<CreateUserCommandHandler> logger)
         {
             this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
@@ -53,6 +55,7 @@ public class CreateUserCommand : IRequest<User>
             this.tokenFactory = tokenFactory ?? throw new ArgumentNullException(nameof(tokenFactory));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
+            this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         }
 
         public async Task<User> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -70,7 +73,7 @@ public class CreateUserCommand : IRequest<User>
 
                 request.UserModel.ValidateAndSanitize(oidcOptions, tokenFactory);
                 user = new User();
-                user.UpdatePasswordAndHash(passwordHasher);
+                user.UpdatePasswordAndHash(passwordHasher, dateTime);
                 user = request.UserModel.ApplyTo(user);
                 return await userRepository.Create(user, cancellationToken);
             }

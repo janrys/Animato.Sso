@@ -213,8 +213,9 @@ public class DataSeeder : IDataSeeder
             AuthorizationMethod = AuthorizationMethod.Password,
             LastChanged = dateTime.UtcNow,
             TotpSecretKey = TesterUserId.ToString(),
+            PasswordHashAlgorithm = HashAlgorithmType.SHA256,
         };
-        user.UpdatePasswordAndHash(passwordHasher, "testpass");
+        user.UpdatePasswordAndHash(passwordHasher, "testpass", dateTime);
         testUser = await userRepository.Create(user, new UserId(TesterUserId), CancellationToken.None);
 
         user = new User()
@@ -224,9 +225,10 @@ public class DataSeeder : IDataSeeder
             FullName = "Admin Admin",
             AuthorizationMethod = AuthorizationMethod.TotpQrCode,
             LastChanged = dateTime.UtcNow,
-            TotpSecretKey = AdminUserId.ToString()
+            TotpSecretKey = AdminUserId.ToString(),
+            PasswordHashAlgorithm = HashAlgorithmType.SHA256
         };
-        user.UpdatePasswordAndHash(passwordHasher, "adminpass");
+        user.UpdatePasswordAndHash(passwordHasher, "adminpass", dateTime);
         adminUser = await userRepository.Create(user, new UserId(AdminUserId), CancellationToken.None);
 
         logger.LogInformation("Users seeded");

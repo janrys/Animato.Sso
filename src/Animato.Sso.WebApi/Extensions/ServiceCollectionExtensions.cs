@@ -33,7 +33,7 @@ public static class ServiceCollectionExtensions
         var globalOptions = new GlobalOptions();
         configuration.Bind(GlobalOptions.ConfigurationKey, globalOptions);
 
-        if (!string.IsNullOrEmpty(globalOptions.ApplicationInsightsKey))
+        if (globalOptions.UseApplicationInsights())
         {
             builder.Services.AddApplicationInsightsTelemetry(globalOptions.ApplicationInsightsKey);
         }
@@ -65,7 +65,7 @@ public static class ServiceCollectionExtensions
                     .Enrich.WithMachineName()
                     .WriteTo.Async(a => a.Console());
 
-            if (!string.IsNullOrEmpty(globalOptions.ApplicationInsightsKey))
+            if (globalOptions.UseApplicationInsights())
             {
                 configuration.WriteTo.ApplicationInsights(services.GetRequiredService<TelemetryConfiguration>(), TelemetryConverter.Traces);
             }

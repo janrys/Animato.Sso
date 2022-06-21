@@ -52,7 +52,7 @@ public class LoginUserCommand : IRequest<User>
                 if (user is null
                     || user.IsDeleted
                     || user.IsBlocked
-                    || !passwordHasher.IsValid(user.Password, request.Password, user.Salt))
+                    || !passwordHasher.IsValid(user.Password, request.Password, user.Salt, user.PasswordHashAlgorithm))
                 {
                     return null;
                 }

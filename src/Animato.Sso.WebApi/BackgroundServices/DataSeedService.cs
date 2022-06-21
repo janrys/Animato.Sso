@@ -3,6 +3,7 @@ namespace Animato.Sso.WebApi.BackgroundServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 
 public class DataSeedService : BackgroundService
 {
@@ -17,8 +18,8 @@ public class DataSeedService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation($"{nameof(DataSeedService)} starting");
+        logger.ServiceStartingInformation(nameof(DataSeedService));
         await dataSeeder.Seed();
-        logger.LogInformation($"{nameof(DataSeedService)} finished");
+        logger.ServiceFinishedInformation(nameof(DataSeedService));
     }
 }

@@ -28,7 +28,6 @@ public class ApplicationTableEntity : ITableEntity
     public string RedirectUris { get; set; }
     public int AccessTokenExpirationMinutes { get; set; }
     public int RefreshTokenExpirationMinutes { get; set; }
-    public bool Use2Fa { get; set; }
     public string AuthorizationMethod { get; set; }
 
 }
@@ -50,7 +49,6 @@ public static class ApplicationTableEntityExtensions
             : new List<string>(tableEntity.RedirectUris.Split(AzureTableStorageOptions.ArraySplitter)),
          AccessTokenExpirationMinutes = tableEntity.AccessTokenExpirationMinutes,
          RefreshTokenExpirationMinutes = tableEntity.RefreshTokenExpirationMinutes,
-         Use2Fa = tableEntity.Use2Fa,
          AuthorizationMethod = Domain.Enums.AuthorizationMethod.FromName(tableEntity.AuthorizationMethod),
      };
 
@@ -66,7 +64,6 @@ public static class ApplicationTableEntityExtensions
             : string.Join(AzureTableStorageOptions.ArraySplitter, application.RedirectUris),
          AccessTokenExpirationMinutes = application.AccessTokenExpirationMinutes,
          RefreshTokenExpirationMinutes = application.RefreshTokenExpirationMinutes,
-         Use2Fa = application.Use2Fa,
          AuthorizationMethod = application.AuthorizationMethod.Name,
      };
 }

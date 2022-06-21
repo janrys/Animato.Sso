@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Features.Users;
 using Animato.Sso.Domain.Entities;
 using Animato.Sso.Domain.Enums;
@@ -14,6 +15,7 @@ public class DataSeeder : IDataSeeder
 {
     private readonly IPasswordFactory passwordHasher;
     private readonly OidcOptions oidcOptions;
+    private readonly GlobalOptions globalOptions;
     private readonly IUserRepository userRepository;
     private readonly IApplicationRepository applicationRepository;
     private readonly IApplicationRoleRepository applicationRoleRepository;
@@ -33,6 +35,7 @@ public class DataSeeder : IDataSeeder
 
     public DataSeeder(IPasswordFactory passwordHasher
         , OidcOptions oidcOptions
+        , GlobalOptions globalOptions
         , IUserRepository userRepository
         , IApplicationRepository applicationRepository
         , IApplicationRoleRepository applicationRoleRepository
@@ -43,6 +46,7 @@ public class DataSeeder : IDataSeeder
     {
         this.passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
         this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
+        this.globalOptions = globalOptions ?? throw new ArgumentNullException(nameof(globalOptions));
         this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
         this.applicationRoleRepository = applicationRoleRepository ?? throw new ArgumentNullException(nameof(applicationRoleRepository));
@@ -54,13 +58,72 @@ public class DataSeeder : IDataSeeder
 
     public async Task Seed()
     {
+        if (!globalOptions.ClearAndSeedData)
+        {
+            return;
+        }
+
         await Clear();
+        await SeedSsoService();
         await SeedUsers();
         await SeedApplications();
         await SeedApplicationRoles();
         await SeedUserApplicationRoles();
         await SeedScopes();
         await SeedClaims();
+    }
+
+    private async Task SeedSsoService()
+    {
+        var application = new Application()
+        {
+            Id = Domain.Entities.ApplicationId.New(),
+            Name = "Animato SSO",
+            Code = oidcOptions.Issuer,
+            Secrets = new List<string>(new string[] { oidcOptions.IssuerSecret1, oidcOptions.IssuerSecret2 }),
+            RedirectUris = new List<string>(new string[] { oidcOptions.IssuerRedirectUri }),
+            AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
+            RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
+            AuthorizationMethod = AuthorizationMethod.Password
+        };
+        application = await applicationRepository.Create(application, CancellationToken.None);
+
+        var applicationRole = new ApplicationRole()
+        {
+            Id = ApplicationRoleId.New(),
+            ApplicationId = application.Id,
+            Name = $"Admin"
+        };
+        var ssoAdminapplicationRole = await applicationRoleRepository.Create(applicationRole, CancellationToken.None);
+
+        applicationRole = new ApplicationRole()
+        {
+            Id = ApplicationRoleId.New(),
+            ApplicationId = application.Id,
+            Name = $"Reader"
+        };
+        await applicationRoleRepository.Create(applicationRole, CancellationToken.None);
+
+        var ssoAdminLogin = "ssoadmin@animato.cz";
+        var ssoAdminPassword = ssoAdminLogin;
+        var ssoAdminTotpSecretKey = ssoAdminLogin;
+        var ssoAdminUser = new User
+        {
+            Login = ssoAdminLogin,
+            Name = "SSOAdmin",
+            FullName = "SSOAdmin",
+            AuthorizationMethod = AuthorizationMethod.Password,
+            LastChanged = dateTime.UtcNow,
+            PasswordHashAlgorithm = HashAlgorithmType.SHA256,
+            TotpSecretKey = ssoAdminTotpSecretKey
+        };
+        ssoAdminUser.UpdatePasswordAndHash(passwordHasher, ssoAdminPassword, dateTime);
+        ssoAdminUser = await userRepository.Create(ssoAdminUser, CancellationToken.None);
+
+        await userRepository.AddUserRole(ssoAdminUser.Id, ssoAdminapplicationRole.Id, CancellationToken.None);
+
+        logger.SsoSeededInformation(application.Name, application.Id.Value.ToString(), application.Code);
+        logger.SsoAdminSeededInformation(ssoAdminUser.Login, ssoAdminUser.Id.Value.ToString(), ssoAdminPassword, ssoAdminTotpSecretKey);
     }
 
     private async Task Clear()
@@ -79,7 +142,7 @@ public class DataSeeder : IDataSeeder
         await scopeRepository.Create(Scope.Phone, Scope.Phone.Id, CancellationToken.None);
         await scopeRepository.Create(Scope.Role, Scope.Role.Id, CancellationToken.None);
         await scopeRepository.Create(Scope.Mail, Scope.Mail.Id, CancellationToken.None);
-        logger.LogInformation("Scopes seeded");
+        logger.DataSeededInformation("Scopes");
     }
 
 
@@ -89,7 +152,7 @@ public class DataSeeder : IDataSeeder
         await claimRepository.Create(Claim.Phone, Claim.Phone.Id, CancellationToken.None);
         await claimRepository.Create(Claim.Mail, Claim.Mail.Id, CancellationToken.None);
 
-        logger.LogInformation("Claims seeded");
+        logger.DataSeededInformation("Claims");
     }
 
     private async Task SeedUserApplicationRoles()
@@ -111,7 +174,7 @@ public class DataSeeder : IDataSeeder
             await userRepository.AddUserRole(testUser.Id, role.Id, CancellationToken.None);
         }
 
-        logger.LogInformation("User application roles seeded");
+        logger.DataSeededInformation("User application roles");
     }
 
     private async Task SeedApplicationRoles()
@@ -151,7 +214,7 @@ public class DataSeeder : IDataSeeder
             seededApplicationRoles.Add(await applicationRoleRepository.Create(applicationRole, CancellationToken.None));
         }
 
-        logger.LogInformation("Application roles seeded");
+        logger.DataSeededInformation("Application roles");
     }
 
     private async Task SeedApplications()
@@ -165,7 +228,6 @@ public class DataSeeder : IDataSeeder
             RedirectUris = new List<string>(new string[] { "https://testapp1.animato.cz", "https://testapp1.animato.com" }),
             AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
             RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
-            Use2Fa = false,
             AuthorizationMethod = AuthorizationMethod.Password
         };
         testAplication = await applicationRepository.Create(application, CancellationToken.None);
@@ -180,7 +242,6 @@ public class DataSeeder : IDataSeeder
             RedirectUris = new List<string>(new string[] { "https://crm.animato.cz", "https://crm.animato.com" }),
             AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
             RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
-            Use2Fa = false,
             AuthorizationMethod = AuthorizationMethod.Password
         };
         crmAplication = await applicationRepository.Create(application, CancellationToken.None);
@@ -195,12 +256,11 @@ public class DataSeeder : IDataSeeder
             RedirectUris = new List<string>(new string[] { "https://norights.animato.cz", "https://norights.animato.com" }),
             AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes,
             RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes,
-            Use2Fa = false,
             AuthorizationMethod = AuthorizationMethod.Password
         };
         seededApplications.Add(await applicationRepository.Create(application, CancellationToken.None));
 
-        logger.LogInformation("Applications seeded");
+        logger.DataSeededInformation("Applications");
     }
     private async Task SeedUsers()
     {
@@ -230,6 +290,6 @@ public class DataSeeder : IDataSeeder
         user.UpdatePasswordAndHash(passwordHasher, "adminpass", dateTime);
         adminUser = await userRepository.Create(user, new UserId(AdminUserId), CancellationToken.None);
 
-        logger.LogInformation("Users seeded");
+        logger.DataSeededInformation("Users");
     }
 }

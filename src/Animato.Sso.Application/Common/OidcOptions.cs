@@ -9,6 +9,9 @@ public class OidcOptions
     public int RefreshTokenExpirationMinutes { get; set; } = 60 * 24;
     public int CodeExpirationMinutes { get; set; } = 10;
     public string Issuer { get; set; } = "Animato.Sso";
+    public string IssuerSecret1 { get; set; } = "asdferwytwretwrtwer";
+    public string IssuerSecret2 { get; set; } = "asdfbcnhgjkghjkgasf";
+    public string IssuerRedirectUri { get; set; } = "https://sso.animato.cz";
     public int RefreshTokenLength { get; set; } = 60;
     public int DefaultUserPasswordLength { get; set; } = 10;
     public int MinimalPasswordLength { get; set; } = 8;

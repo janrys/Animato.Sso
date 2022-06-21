@@ -12,7 +12,6 @@ public class Application
 
     public int AccessTokenExpirationMinutes { get; set; }
     public int RefreshTokenExpirationMinutes { get; set; }
-    public bool Use2Fa { get; set; }
 
     public AuthorizationMethod AuthorizationMethod { get; set; }
 

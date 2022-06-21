@@ -16,7 +16,6 @@ public static class ApplicationExensions
         application.RefreshTokenExpirationMinutes = model.RefreshTokenExpirationMinutes.Value;
         application.RedirectUris = model.RedirectUris;
         application.Secrets = model.Secrets;
-        application.Use2Fa = model.Use2Fa;
         return application;
     }
 

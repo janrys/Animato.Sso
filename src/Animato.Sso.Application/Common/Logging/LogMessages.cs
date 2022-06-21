@@ -11,6 +11,21 @@ public static partial class LogMessages
     [LoggerMessage(10001, LogLevel.Information, "Using {LayerName} persistence layer")]
     public static partial void PersistenceLayerLoadingInformation(this ILogger logger, string layerName);
 
+    [LoggerMessage(10002, LogLevel.Information, "{ApplicationName} seeded with id {ApplicationId} and client id {ClientId}")]
+    public static partial void SsoSeededInformation(this ILogger logger, string applicationName, string applicationId, string clientId);
+
+    [LoggerMessage(10003, LogLevel.Information, "SSO admin seeded. Change password ASAP. Login {Login}, id {Id}, password {Password}, TOTP secret key {TotpSecretKey}")]
+    public static partial void SsoAdminSeededInformation(this ILogger logger, string login, string id, string password, string totpSecretKey);
+
+    [LoggerMessage(10004, LogLevel.Information, "{DomainName} seeded")]
+    public static partial void DataSeededInformation(this ILogger logger, string domainName);
+
+    [LoggerMessage(10005, LogLevel.Information, "{ServiceName} starting")]
+    public static partial void ServiceStartingInformation(this ILogger logger, string serviceName);
+
+    [LoggerMessage(10006, LogLevel.Information, "{ServiceName} finished")]
+    public static partial void ServiceFinishedInformation(this ILogger logger, string serviceName);
+
     /* WARNINGS >= 15000  */
 
     /* ERRORS >= 20000  */

@@ -10,31 +10,32 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-public class AddUserRoleCommand : IRequest<IEnumerable<ApplicationRole>>
+public class AddUserRolesCommand : IRequest<IEnumerable<ApplicationRole>>
 {
-    public AddUserRoleCommand(UserId userId
-        , ApplicationRoleId roleId
-        , ClaimsPrincipal user)
+    public AddUserRolesCommand(UserId userId
+        , ClaimsPrincipal user
+        , params ApplicationRoleId[] roleIds
+        )
     {
         UserId = userId;
-        RoleId = roleId;
+        RoleIds = roleIds;
         User = user;
     }
 
     public UserId UserId { get; }
-    public ApplicationRoleId RoleId { get; }
+    public ApplicationRoleId[] RoleIds { get; }
     public ClaimsPrincipal User { get; }
 
-    public class AddUserRoleCommandValidator : AbstractValidator<AddUserRoleCommand>
+    public class AddUserRoleCommandValidator : AbstractValidator<AddUserRolesCommand>
     {
         public AddUserRoleCommandValidator()
         {
-            RuleFor(v => v.RoleId).NotNull().WithMessage(v => $"{nameof(v.RoleId)} must have a value");
+            RuleFor(v => v.RoleIds).NotEmpty().WithMessage(v => $"{nameof(v.RoleIds)} must have a value");
             RuleFor(v => v.UserId).NotNull().WithMessage(v => $"{nameof(v.UserId)} must have a value");
         }
     }
 
-    public class AddUserRoleCommandHandler : IRequestHandler<AddUserRoleCommand, IEnumerable<ApplicationRole>>
+    public class AddUserRoleCommandHandler : IRequestHandler<AddUserRolesCommand, IEnumerable<ApplicationRole>>
     {
         private readonly IUserRepository userRepository;
         private readonly IApplicationRoleRepository roleRepository;
@@ -50,7 +51,7 @@ public class AddUserRoleCommand : IRequest<IEnumerable<ApplicationRole>>
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<IEnumerable<ApplicationRole>> Handle(AddUserRoleCommand request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<ApplicationRole>> Handle(AddUserRolesCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -61,23 +62,23 @@ public class AddUserRoleCommand : IRequest<IEnumerable<ApplicationRole>>
                     throw new NotFoundException(nameof(Application), request.UserId);
                 }
 
-                var role = await roleRepository.GetById(request.RoleId, cancellationToken);
+                var applicationRoles = await roleRepository.GetByIds(cancellationToken, request.RoleIds);
+                var missingApplicationRoleIds = request.RoleIds.Where(r => !applicationRoles.Any(a => a.Id == r));
 
-                if (role is null)
+                if (missingApplicationRoleIds.Any())
                 {
-                    throw new NotFoundException(nameof(ApplicationRole), request.RoleId);
+                    throw new NotFoundException(nameof(ApplicationRole), string.Join(", ", missingApplicationRoleIds.Select(r => r.Value)));
                 }
 
-                var roles = new List<ApplicationRole>();
-                roles.AddRange(await userRepository.GetUserRoles(request.UserId, cancellationToken));
+                var userRoles = await userRepository.GetUserRoles(request.UserId, cancellationToken);
+                applicationRoles = applicationRoles.Where(a => !userRoles.Any(r => r.Id == a.Id));
 
-                if (!roles.Any(r => r.Id == request.RoleId))
+                if (applicationRoles.Any())
                 {
-                    await userRepository.AddUserRole(user.Id, role.Id, cancellationToken);
+                    await userRepository.AddUserRoles(user.Id, cancellationToken, applicationRoles.Select(r => r.Id).ToArray());
                 }
-                roles.Add(role);
 
-                return roles;
+                return applicationRoles;
             }
             catch (NotFoundException) { throw; }
             catch (Exceptions.ValidationException) { throw; }

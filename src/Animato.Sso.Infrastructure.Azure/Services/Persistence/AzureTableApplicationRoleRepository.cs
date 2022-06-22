@@ -83,6 +83,37 @@ public class AzureTableApplicationRoleRepository : IApplicationRoleRepository
         }
     }
 
+    public async Task<IEnumerable<ApplicationRole>> GetByIds(CancellationToken cancellationToken, params ApplicationRoleId[] applicationRoleIds)
+    {
+        var applicationRoles = new List<ApplicationRole>();
+
+        if (applicationRoleIds is null || !applicationRoleIds.Any())
+        {
+            return applicationRoles;
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            var filter = string.Join(" or ", applicationRoleIds.Select(r => $"RowKey eq '{r.Value}'"));
+            var queryResult = Table.QueryAsync<ApplicationRoleTableEntity>(filter, cancellationToken: cancellationToken);
+            var results = new List<ApplicationRoleTableEntity>();
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            applicationRoles.AddRange(results.Select(e => e.ToEntity()));
+            return applicationRoles;
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesLoadingError(exception);
+            throw;
+        }
+    }
+
     public async Task<ApplicationRole> Create(ApplicationRole role, CancellationToken cancellationToken)
     {
         if (role is null)

@@ -172,6 +172,57 @@ public class UserController : ApiControllerBase
     }
 
     /// <summary>
+    /// Assign application roles to user
+    /// </summary>
+    /// <param name="id">User identifier</param>
+    /// <param name="roles">Application user role identifiers</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>User application roles</returns>
+    [HttpPost("{id}/role", Name = "AssignUserRoles")]
+    public async Task<IActionResult> AssignUserRoles(string id, [FromBody] AddUserRolesModel roles, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(AssignUserRoles));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        if (roles is null || roles.RoleIds is null || !roles.RoleIds.Any(r => !string.IsNullOrEmpty(r)))
+        {
+            return BadRequest($"{nameof(roles)} must have a value");
+        }
+
+        Domain.Entities.UserId userId;
+        if (Guid.TryParse(id, out var parsedUserId))
+        {
+            userId = new Domain.Entities.UserId(parsedUserId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        var roleIds = new List<Domain.Entities.ApplicationRoleId>();
+        foreach (var roleId in roles.RoleIds)
+        {
+            Domain.Entities.ApplicationRoleId applicationRoleId;
+            if (Guid.TryParse(roleId, out var parsedApplicationRoleId))
+            {
+                applicationRoleId = new Domain.Entities.ApplicationRoleId(parsedApplicationRoleId);
+                roleIds.Add(applicationRoleId);
+            }
+            else
+            {
+                return BadRequest($"{nameof(roleId)} has a wrong format '{roleId}'");
+            }
+        }
+
+        var rolesResult = await this.CommandForCurrentUser(cancellationToken).User.AddRoles(userId, roleIds.ToArray());
+        return Ok(rolesResult);
+    }
+
+    /// <summary>
     /// Assign application role to user
     /// </summary>
     /// <param name="id">User identifier</param>

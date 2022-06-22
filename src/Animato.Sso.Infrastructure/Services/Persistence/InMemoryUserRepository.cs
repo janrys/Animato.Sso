@@ -217,6 +217,29 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
+    public async Task AddUserRoles(UserId userId, CancellationToken cancellationToken, params ApplicationRoleId[] roleIds)
+    {
+        if (roleIds is null || !roleIds.Any())
+        {
+            return;
+        }
+
+        try
+        {
+            roleIds.ToList().ForEach(r => userApplicationRoles.Add(new UserApplicationRole()
+            {
+                UserId = userId,
+                ApplicationRoleId = r,
+            }));
+            await UpdateUserLastChange(userId, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesInsertingError(exception);
+            throw;
+        }
+    }
+
     public async Task RemoveUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
         try

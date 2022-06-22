@@ -52,6 +52,24 @@ public class InMemoryApplicationRoleRepository : IApplicationRoleRepository
         }
     }
 
+    public Task<IEnumerable<ApplicationRole>> GetByIds(CancellationToken cancellationToken, params ApplicationRoleId[] applicationRoleIds)
+    {
+        if (applicationRoleIds is null || !applicationRoleIds.Any())
+        {
+            return Task.FromResult(Enumerable.Empty<ApplicationRole>());
+        }
+
+        try
+        {
+            return Task.FromResult(applicationRoles.Where(r => applicationRoleIds.Any(a => a == r.Id)));
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesLoadingError(exception);
+            throw;
+        }
+    }
+
     public Task<ApplicationRole> Create(ApplicationRole role, CancellationToken cancellationToken)
     {
         try

@@ -315,6 +315,36 @@ public class AzureTableUserRepository : IUserRepository
         }
     }
 
+    public async Task AddUserRoles(UserId userId, CancellationToken cancellationToken, params ApplicationRoleId[] roleIds)
+    {
+        if (roleIds is null || !roleIds.Any())
+        {
+            return;
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            await AzureTableStorageDataContext.BatchManipulateEntities(
+                TableUserApplicationRoles
+                , roleIds.Select(r => new UserApplicationRole()
+                {
+                    UserId = userId,
+                    ApplicationRoleId = r,
+                }.ToTableEntity())
+                , TableTransactionActionType.Add
+                , cancellationToken
+                );
+            await UpdateUserLastChange(userId, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesInsertingError(exception);
+            throw;
+        }
+    }
+
     public async Task RemoveUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
         await ThrowExceptionIfTableNotExists(cancellationToken);

@@ -8,6 +8,7 @@ using Animato.Sso.Domain.Entities;
 public interface IApplicationRoleRepository
 {
     Task<ApplicationRole> GetById(ApplicationRoleId applicationRoleId, CancellationToken cancellationToken);
+    Task<IEnumerable<ApplicationRole>> GetByIds(CancellationToken cancellationToken, params ApplicationRoleId[] applicationRoleIds);
     Task<IEnumerable<ApplicationRole>> GetByApplicationId(ApplicationId applicationId, CancellationToken cancellationToken);
     Task Delete(ApplicationRoleId roleId, CancellationToken cancellationToken);
     Task<ApplicationRole> Create(ApplicationRole role, CancellationToken cancellationToken);

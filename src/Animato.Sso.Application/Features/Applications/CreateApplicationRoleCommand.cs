@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.Application.Features.Applications;
+namespace Animato.Sso.Application.Features.Applications;
 using System;
 using System.Security.Claims;
 using System.Threading;
@@ -13,17 +13,17 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-public class CreateApplicationRoleCommand : IRequest<ApplicationRole>
+public class CreateApplicationRoleCommand : IRequest<IEnumerable<ApplicationRole>>
 {
-    public CreateApplicationRoleCommand(Domain.Entities.ApplicationId applicationId, CreateApplicationRoleModel role, ClaimsPrincipal user)
+    public CreateApplicationRoleCommand(Domain.Entities.ApplicationId applicationId, CreateApplicationRolesModel roles, ClaimsPrincipal user)
     {
         ApplicationId = applicationId;
-        Role = role;
+        Roles = roles;
         User = user;
     }
 
     public Domain.Entities.ApplicationId ApplicationId { get; }
-    public CreateApplicationRoleModel Role { get; }
+    public CreateApplicationRolesModel Roles { get; }
     public ClaimsPrincipal User { get; }
 
     public class CreateApplicationRoleCommandValidator : AbstractValidator<CreateApplicationRoleCommand>
@@ -31,11 +31,12 @@ public class CreateApplicationRoleCommand : IRequest<ApplicationRole>
         public CreateApplicationRoleCommandValidator()
         {
             RuleFor(v => v.ApplicationId).NotNull().WithMessage(v => $"{nameof(v.ApplicationId)} must have a value");
-            RuleFor(v => v.Role).NotNull().WithMessage(v => $"{nameof(v.Role)} must have a value");
+            RuleFor(v => v.Roles).NotNull().WithMessage(v => $"{nameof(v.Roles)} must have a value");
+            RuleFor(v => v.Roles.Names).NotEmpty().WithMessage(v => $"{nameof(v.Roles.Names)} must have a value");
         }
     }
 
-    public class CreateApplicationRoleCommandHandler : IRequestHandler<CreateApplicationRoleCommand, ApplicationRole>
+    public class CreateApplicationRoleCommandHandler : IRequestHandler<CreateApplicationRoleCommand, IEnumerable<ApplicationRole>>
     {
         private readonly OidcOptions oidcOptions;
         private readonly IApplicationRepository applicationRepository;
@@ -57,7 +58,7 @@ public class CreateApplicationRoleCommand : IRequest<ApplicationRole>
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<ApplicationRole> Handle(CreateApplicationRoleCommand request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<ApplicationRole>> Handle(CreateApplicationRoleCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -69,11 +70,19 @@ public class CreateApplicationRoleCommand : IRequest<ApplicationRole>
                         , $"Application with id {request.ApplicationId} does not exist");
                 }
 
-                request.Role.ValidateAndSanitize();
-                var role = new ApplicationRole();
-                role = request.Role.ApplyTo(role);
-                role.ApplicationId = request.ApplicationId;
-                return await roleRepository.Create(role, cancellationToken);
+                var roles = new List<ApplicationRole>();
+
+                foreach (var roleName in request.Roles.Names)
+                {
+                    var createRoleModel = new CreateApplicationRoleModel() { Name = roleName };
+                    createRoleModel.ValidateAndSanitize();
+                    var role = new ApplicationRole();
+                    role = createRoleModel.ApplyTo(role);
+                    role.ApplicationId = request.ApplicationId;
+                    roles.Add(role);
+                }
+
+                return await roleRepository.Create(cancellationToken, roles.ToArray());
             }
             catch (NotFoundException) { throw; }
             catch (Exceptions.ValidationException) { throw; }

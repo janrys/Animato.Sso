@@ -11,6 +11,7 @@ public interface IApplicationRoleRepository
     Task<IEnumerable<ApplicationRole>> GetByApplicationId(ApplicationId applicationId, CancellationToken cancellationToken);
     Task Delete(ApplicationRoleId roleId, CancellationToken cancellationToken);
     Task<ApplicationRole> Create(ApplicationRole role, CancellationToken cancellationToken);
+    Task<IEnumerable<ApplicationRole>> Create(CancellationToken cancellationToken, params ApplicationRole[] roles);
     Task<ApplicationRole> Update(ApplicationRole role, CancellationToken cancellationToken);
     Task Clear(CancellationToken cancellationToken);
 }

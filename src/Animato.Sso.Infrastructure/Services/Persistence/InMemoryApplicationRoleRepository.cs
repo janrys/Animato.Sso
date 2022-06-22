@@ -67,6 +67,19 @@ public class InMemoryApplicationRoleRepository : IApplicationRoleRepository
         }
     }
 
+    public async Task<IEnumerable<ApplicationRole>> Create(CancellationToken cancellationToken, params ApplicationRole[] roles)
+    {
+        var result = new List<ApplicationRole>();
+
+        foreach (var role in roles)
+        {
+            result.Add(await Create(role, cancellationToken));
+        }
+
+        return result;
+    }
+
+
     public Task<ApplicationRole> Update(ApplicationRole role, CancellationToken cancellationToken)
     {
         try
@@ -108,4 +121,5 @@ public class InMemoryApplicationRoleRepository : IApplicationRoleRepository
         applicationRoles.Clear();
         return Task.CompletedTask;
     }
+
 }

@@ -17,6 +17,7 @@ public static class ApplicationRoleExensions
                 , $"Role name cannot be empty"));
         }
 
+        role.Name = role.Name.Trim();
         return role;
     }
 }

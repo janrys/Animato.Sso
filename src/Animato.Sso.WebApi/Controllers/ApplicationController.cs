@@ -239,23 +239,29 @@ public class ApplicationController : ApiControllerBase
     /// Create application role
     /// </summary>
     /// <param name="id">Application identifier</param>
-    /// <param name="role">Application role</param>
+    /// <param name="roles">Application roles</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Created application role</returns>
     [HttpPost("{id}/role", Name = "CreateApplicationRole")]
-    public async Task<IActionResult> CreateApplicationRole(string id, [FromBody] CreateApplicationRoleModel role, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateApplicationRole(string id, [FromBody] CreateApplicationRolesModel roles, CancellationToken cancellationToken)
     {
         logger.LogDebug("Executing action {Action}", nameof(CreateApplicationRole));
 
-        if (role is null)
+        if (roles is null)
         {
-            return BadRequest($"{nameof(role)} must have a value");
+            return BadRequest($"{nameof(roles)} must have a value");
         }
 
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
         }
+
+        if (roles.Names is null || !roles.Names.Any() || roles.Names.Any(n => string.IsNullOrEmpty(n.Trim())))
+        {
+            return BadRequest($"{nameof(roles.Names)} must have a value");
+        }
+
         Domain.Entities.ApplicationId applicationId;
         if (Guid.TryParse(id, out var parsedApplicationId))
         {
@@ -266,8 +272,8 @@ public class ApplicationController : ApiControllerBase
             return BadRequest($"{nameof(id)} has a wrong format '{id}'");
         }
 
-        var createdRole = await this.CommandForCurrentUser(cancellationToken).Application.CreateRole(applicationId, role);
-        return Ok(createdRole);
+        var createdRoles = await this.CommandForCurrentUser(cancellationToken).Application.CreateRole(applicationId, roles);
+        return Ok(createdRoles);
     }
 
     /// <summary>

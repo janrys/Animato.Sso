@@ -106,6 +106,26 @@ public class AzureTableApplicationRoleRepository : IApplicationRoleRepository
         }
     }
 
+    public async Task<IEnumerable<ApplicationRole>> Create(CancellationToken cancellationToken, params ApplicationRole[] roles)
+    {
+        if (roles is null || !roles.Any())
+        {
+            throw new ArgumentNullException(nameof(roles));
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        roles.ToList().ForEach(r => r.Id = ApplicationRoleId.New());
+        await AzureTableStorageDataContext.BatchManipulateEntities(
+            Table
+            , roles.Select(r => r.ToTableEntity())
+            , TableTransactionActionType.Add
+            , cancellationToken);
+
+        return roles;
+    }
+
+
     public async Task<ApplicationRole> Update(ApplicationRole role, CancellationToken cancellationToken)
     {
         if (role is null)

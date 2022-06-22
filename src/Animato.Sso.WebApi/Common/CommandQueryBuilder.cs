@@ -40,7 +40,7 @@ public interface IApplicationCommandBuilder
     Task<Application> Create(CreateApplicationModel application);
     Task<Application> Update(ApplicationId applicationId, CreateApplicationModel application);
     Task Delete(ApplicationId applicationId);
-    Task<ApplicationRole> CreateRole(ApplicationId applicationId, CreateApplicationRoleModel role);
+    Task<IEnumerable<ApplicationRole>> CreateRole(ApplicationId applicationId, CreateApplicationRolesModel roles);
     Task<ApplicationRole> UpdateRole(ApplicationRoleId roleId, CreateApplicationRoleModel role);
     Task DeleteRole(ApplicationRoleId roleId);
 }
@@ -159,8 +159,8 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
     Task<ApplicationRole> IApplicationQueryBuilder.GetRoleById(ApplicationRoleId applicationRoleId)
         => mediator.Send(new GetApplicationRoleByIdQuery(applicationRoleId, user), cancellationToken);
 
-    Task<ApplicationRole> IApplicationCommandBuilder.CreateRole(ApplicationId applicationId, CreateApplicationRoleModel role)
-        => mediator.Send(new CreateApplicationRoleCommand(applicationId, role, user), cancellationToken);
+    Task<IEnumerable<ApplicationRole>> IApplicationCommandBuilder.CreateRole(ApplicationId applicationId, CreateApplicationRolesModel roles)
+        => mediator.Send(new CreateApplicationRoleCommand(applicationId, roles, user), cancellationToken);
 
     Task<ApplicationRole> IApplicationCommandBuilder.UpdateRole(ApplicationRoleId roleId, CreateApplicationRoleModel role)
         => mediator.Send(new UpdateApplicationRoleCommand(roleId, role, user), cancellationToken);

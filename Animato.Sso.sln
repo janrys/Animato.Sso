@@ -28,7 +28,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Animato.Sso.Infrastructure"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Animato.Sso.WebApi", "src\Animato.Sso.WebApi\Animato.Sso.WebApi.csproj", "{11BF69D2-CE9E-4F3F-9C9A-F09D867B18DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Animato.Sso.Infrastructure.AzureStorage", "src\Animato.Sso.Infrastructure.Azure\Animato.Sso.Infrastructure.AzureStorage.csproj", "{B216FD29-F1BA-4D1F-96FD-C25F54E87E90}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Animato.Sso.Infrastructure.AzureStorage", "src\Animato.Sso.Infrastructure.Azure\Animato.Sso.Infrastructure.AzureStorage.csproj", "{B216FD29-F1BA-4D1F-96FD-C25F54E87E90}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{B339FBD9-65A5-4AA8-A6B7-49776AD7E9D3}"
+	ProjectSection(SolutionItems) = preProject
+		src\Scripts\AzInfraDeployment.ps1 = src\Scripts\AzInfraDeployment.ps1
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,6 +71,7 @@ Global
 		{C340DA6D-D53E-4D0A-895E-934D0100D2EB} = {A661B34B-3191-4712-847E-04537CE2C5DB}
 		{11BF69D2-CE9E-4F3F-9C9A-F09D867B18DC} = {A661B34B-3191-4712-847E-04537CE2C5DB}
 		{B216FD29-F1BA-4D1F-96FD-C25F54E87E90} = {A661B34B-3191-4712-847E-04537CE2C5DB}
+		{B339FBD9-65A5-4AA8-A6B7-49776AD7E9D3} = {A661B34B-3191-4712-847E-04537CE2C5DB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {801E76B6-7474-4E11-B942-57AFD16B9C23}

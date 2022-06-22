@@ -38,12 +38,12 @@ public static class ApplicationExensions
                 };
         }
 
-        if (!application.AccessTokenExpirationMinutes.HasValue)
+        if (!application.AccessTokenExpirationMinutes.HasValue || application.AccessTokenExpirationMinutes.Value <= 0)
         {
             application.AccessTokenExpirationMinutes = oidcOptions.AccessTokenExpirationMinutes;
         }
 
-        if (!application.RefreshTokenExpirationMinutes.HasValue)
+        if (!application.RefreshTokenExpirationMinutes.HasValue || application.AccessTokenExpirationMinutes.Value <= 0)
         {
             application.RefreshTokenExpirationMinutes = oidcOptions.RefreshTokenExpirationMinutes;
         }

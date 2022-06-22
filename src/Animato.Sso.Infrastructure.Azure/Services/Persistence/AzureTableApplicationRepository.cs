@@ -158,7 +158,7 @@ public class AzureTableApplicationRepository : IApplicationRepository
 
         try
         {
-            var queryResult = TableUserApplicationRoles.QueryAsync<UserApplicationRoleTableEntity>(a => a.PartitionKey == userId.ToString(), cancellationToken: cancellationToken);
+            var queryResult = TableUserApplicationRoles.QueryAsync<UserApplicationRoleTableEntity>(a => a.RowKey == userId.ToString(), cancellationToken: cancellationToken);
             var results = new List<UserApplicationRoleTableEntity>();
 
             await queryResult.AsPages()

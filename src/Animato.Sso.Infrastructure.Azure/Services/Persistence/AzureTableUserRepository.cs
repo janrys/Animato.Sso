@@ -223,7 +223,7 @@ public class AzureTableUserRepository : IUserRepository
         {
             var userApplicationRoles = new List<UserApplicationRoleTableEntity>();
             var queryResult = TableUserApplicationRoles
-                .QueryAsync<UserApplicationRoleTableEntity>(r => r.ApplicationRoleId == roleId.Value.ToString()
+                .QueryAsync<UserApplicationRoleTableEntity>(r => r.PartitionKey == roleId.Value.ToString()
                 , cancellationToken: cancellationToken);
 
             await queryResult.AsPages()
@@ -264,7 +264,7 @@ public class AzureTableUserRepository : IUserRepository
         {
             var userApplicationRoles = new List<UserApplicationRoleTableEntity>();
             var queryResult = TableUserApplicationRoles
-                .QueryAsync<UserApplicationRoleTableEntity>(r => r.UserId == userId.Value.ToString()
+                .QueryAsync<UserApplicationRoleTableEntity>(r => r.RowKey == userId.Value.ToString()
                 , cancellationToken: cancellationToken);
 
             await queryResult.AsPages()

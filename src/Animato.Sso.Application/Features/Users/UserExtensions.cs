@@ -10,6 +10,12 @@ public static class UserExtensions
     public static User UpdatePasswordAndHash(this User user, IPasswordFactory passwordHasher, string password, IDateTimeService dateTime)
     {
         user.Salt = passwordHasher.GenerateSalt();
+
+        if (user.PasswordHashAlgorithm is null)
+        {
+            user.PasswordHashAlgorithm = Domain.Enums.HashAlgorithmType.SHA256;
+        }
+
         user.Password = passwordHasher.HashPassword(password, user.Salt, user.PasswordHashAlgorithm);
         user.PasswordLastChanged = dateTime.UtcNow;
         return user;

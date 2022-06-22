@@ -73,8 +73,8 @@ public class CreateUserCommand : IRequest<User>
 
                 request.UserModel.ValidateAndSanitize(oidcOptions, tokenFactory, passwordFactory);
                 user = new User();
-                user.UpdatePasswordAndHash(passwordFactory, dateTime);
                 user = request.UserModel.ApplyTo(user);
+                user.UpdatePasswordAndHash(passwordFactory, dateTime);
                 return await userRepository.Create(user, cancellationToken);
             }
             catch (Exceptions.ValidationException) { throw; }

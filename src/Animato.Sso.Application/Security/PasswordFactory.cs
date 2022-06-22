@@ -20,7 +20,7 @@ public class PasswordFactory : IPasswordFactory
             return new PasswordStrengthResult(PasswordStrength.Poor, $"Minimal password length is {oidcOptions.MinimalPasswordLength}");
         }
 
-        var result = Zxcvbn.Core.EvaluatePassword("p@ssw0rd");
+        var result = Zxcvbn.Core.EvaluatePassword(password);
 
         if (!PasswordStrength.TryFromValue(result.Score, out var passwordStrength))
         {

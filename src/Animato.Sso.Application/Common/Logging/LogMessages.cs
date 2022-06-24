@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging;
 
 
 public static partial class LogMessages
-{   /* TRACE >= 0  */
+{
+    /* TRACE >= 0  */
 
     /* DEBUG >= 5000  */
 
@@ -33,8 +34,8 @@ public static partial class LogMessages
     [LoggerMessage(20001, LogLevel.Error, "Error loading applications")]
     public static partial void ApplicationsLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20002, LogLevel.Error, "Error inserting applications")]
-    public static partial void ApplicationsInsertingError(this ILogger logger, Exception exception);
+    [LoggerMessage(20002, LogLevel.Error, "Error creating applications")]
+    public static partial void ApplicationsCreatingError(this ILogger logger, Exception exception);
 
     [LoggerMessage(20003, LogLevel.Error, "Error updating applications")]
     public static partial void ApplicationsUpdatingError(this ILogger logger, Exception exception);
@@ -45,8 +46,8 @@ public static partial class LogMessages
     [LoggerMessage(20005, LogLevel.Error, "Error loading roles")]
     public static partial void ApplicationRolesLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20006, LogLevel.Error, "Error inserting roles")]
-    public static partial void ApplicationRolesInsertingError(this ILogger logger, Exception exception);
+    [LoggerMessage(20006, LogLevel.Error, "Error creating roles")]
+    public static partial void ApplicationRolesCreatingError(this ILogger logger, Exception exception);
 
     [LoggerMessage(20007, LogLevel.Error, "Error updating roles")]
     public static partial void ApplicationRolesUpdatingError(this ILogger logger, Exception exception);
@@ -57,29 +58,29 @@ public static partial class LogMessages
     [LoggerMessage(20009, LogLevel.Error, "Error loading codes")]
     public static partial void CodesLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20010, LogLevel.Error, "Error inserting codes")]
-    public static partial void CodesInsertingError(this ILogger logger, Exception exception);
+    [LoggerMessage(20010, LogLevel.Error, "Error creating codes")]
+    public static partial void CodesCreatingError(this ILogger logger, Exception exception);
 
     [LoggerMessage(20011, LogLevel.Error, "Error deleting codes")]
     public static partial void CodesDeletingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20012, LogLevel.Error, "Error loading users")]
+    [LoggerMessage(20012, LogLevel.Error, LogMessageTexts.ErrorLoadingUsers)]
     public static partial void UsersLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20013, LogLevel.Error, "Error inserting users")]
-    public static partial void UsersInsertingError(this ILogger logger, Exception exception);
+    [LoggerMessage(20013, LogLevel.Error, LogMessageTexts.ErrorCreatingUsers)]
+    public static partial void UsersCreatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20014, LogLevel.Error, "Error updating users")]
+    [LoggerMessage(20014, LogLevel.Error, LogMessageTexts.ErrorUpdatingUsers)]
     public static partial void UsersUpdatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20015, LogLevel.Error, "Error deleting users")]
+    [LoggerMessage(20015, LogLevel.Error, LogMessageTexts.ErrorDeletingUsers)]
     public static partial void UsersDeletingError(this ILogger logger, Exception exception);
 
     [LoggerMessage(20016, LogLevel.Error, "Error loading tokens")]
     public static partial void TokensLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20017, LogLevel.Error, "Error inserting tokens")]
-    public static partial void TokensInsertingError(this ILogger logger, Exception exception);
+    [LoggerMessage(20017, LogLevel.Error, "Error creating tokens")]
+    public static partial void TokensCreatingError(this ILogger logger, Exception exception);
 
     [LoggerMessage(20018, LogLevel.Error, "Error updating tokens")]
     public static partial void TokensUpdatingError(this ILogger logger, Exception exception);
@@ -87,11 +88,29 @@ public static partial class LogMessages
     [LoggerMessage(20019, LogLevel.Error, "Error deleting tokens")]
     public static partial void TokensDeletingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20020, LogLevel.Error, "Error inserting claims")]
-    public static partial void ClaimsInsertingError(this ILogger logger, Exception exception);
+    [LoggerMessage(20020, LogLevel.Error, "Error loading claims")]
+    public static partial void ClaimsLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20021, LogLevel.Error, "Error inserting scopes")]
-    public static partial void ScopesInsertingError(this ILogger logger, Exception exception);
+    [LoggerMessage(20021, LogLevel.Error, "Error creating claims")]
+    public static partial void ClaimsCreatingError(this ILogger logger, Exception exception);
+
+    [LoggerMessage(20022, LogLevel.Error, "Error updating claims")]
+    public static partial void ClaimsUpdatingError(this ILogger logger, Exception exception);
+
+    [LoggerMessage(20023, LogLevel.Error, "Error deleting claims")]
+    public static partial void ClaimsDeletingError(this ILogger logger, Exception exception);
+
+    [LoggerMessage(20024, LogLevel.Error, LogMessageTexts.ErrorLoadingScopes)]
+    public static partial void ScopesLoadingError(this ILogger logger, Exception exception);
+
+    [LoggerMessage(20025, LogLevel.Error, LogMessageTexts.ErrorCreatingScopes)]
+    public static partial void ScopesCreatingError(this ILogger logger, Exception exception);
+
+    [LoggerMessage(20026, LogLevel.Error, LogMessageTexts.ErrorUpdatingScopes)]
+    public static partial void ScopesUpdatingError(this ILogger logger, Exception exception);
+
+    [LoggerMessage(20027, LogLevel.Error, LogMessageTexts.ErrorDeletingScopes)]
+    public static partial void ScopesDeletingError(this ILogger logger, Exception exception);
 
     /* CRITICAL >= 30000  */
 

@@ -12,4 +12,9 @@ public class AzureTableStorageOptions
     public string AuthorizationCodesTable { get; set; } = "authorizationcodes";
     public string TokensTable { get; set; } = "tokens";
     public string UserApplicationRolesTable { get; set; } = "userapplicationroles";
+    public string ScopesTable { get; set; } = "scopes";
+    public string ClaimsTable { get; set; } = "claims";
+    public string ClaimScopesTable { get; set; } = "claimscopes";
+    public string UserClaimsTable { get; set; } = "userclaims";
+    public string ApplicationScopesTable { get; set; } = "applicationscopes";
 }

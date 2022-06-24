@@ -26,7 +26,11 @@ public class AzureTableStorageDataContext
     public TableClient AuthorizationCodes { get; private set; }
     public TableClient Tokens { get; private set; }
     public TableClient UserApplicationRoles { get; private set; }
-
+    public TableClient Scopes { get; private set; }
+    public TableClient Claims { get; private set; }
+    public TableClient ClaimScopes { get; private set; }
+    public TableClient UserClaims { get; private set; }
+    public TableClient ApplicationScopes { get; private set; }
     public AzureTableStorageDataContext(AzureTableStorageOptions options, ILogger<AzureTableStorageDataContext> logger)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
@@ -48,6 +52,11 @@ public class AzureTableStorageDataContext
         AuthorizationCodes = await EnsureTableExists(options.AuthorizationCodesTable, cancellationToken);
         Tokens = await EnsureTableExists(options.TokensTable, cancellationToken);
         UserApplicationRoles = await EnsureTableExists(options.UserApplicationRolesTable, cancellationToken);
+        Scopes = await EnsureTableExists(options.ScopesTable, cancellationToken);
+        Claims = await EnsureTableExists(options.ClaimsTable, cancellationToken);
+        ClaimScopes = await EnsureTableExists(options.ClaimScopesTable, cancellationToken);
+        UserClaims = await EnsureTableExists(options.UserClaimsTable, cancellationToken);
+        ApplicationScopes = await EnsureTableExists(options.ApplicationScopesTable, cancellationToken);
 
         wasTableCheckOk = true;
         return wasTableCheckOk;

@@ -53,7 +53,7 @@ public class InMemoryUserRepository : IUserRepository
         }
         catch (Exception exception)
         {
-            logger.UsersInsertingError(exception);
+            logger.UsersCreatingError(exception);
             throw;
         }
     }
@@ -212,7 +212,7 @@ public class InMemoryUserRepository : IUserRepository
         }
         catch (Exception exception)
         {
-            logger.ApplicationRolesInsertingError(exception);
+            logger.ApplicationRolesCreatingError(exception);
             throw;
         }
     }
@@ -235,7 +235,7 @@ public class InMemoryUserRepository : IUserRepository
         }
         catch (Exception exception)
         {
-            logger.ApplicationRolesInsertingError(exception);
+            logger.ApplicationRolesCreatingError(exception);
             throw;
         }
     }

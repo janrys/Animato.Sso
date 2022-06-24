@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
 using FluentValidation;
@@ -24,7 +25,7 @@ public class GetUserByUserNameQuery : IRequest<User>
     public class GetUserByUserNameQueryValidator : AbstractValidator<GetUserByUserNameQuery>
     {
         public GetUserByUserNameQueryValidator()
-            => RuleFor(v => v.UserName).NotNull().WithMessage(v => $"{nameof(v.UserName)} must have a value");
+            => RuleFor(v => v.UserName).NotEmpty().WithMessage(v => $"{nameof(v.UserName)} must have a value");
 
     }
 
@@ -32,7 +33,6 @@ public class GetUserByUserNameQuery : IRequest<User>
     {
         private readonly IUserRepository userRepository;
         private readonly ILogger<GetUserByUserNameQueryHandler> logger;
-        private const string ERROR_LOADING_USERS = "Error loading users";
 
         public GetUserByUserNameQueryHandler(IUserRepository userRepository, ILogger<GetUserByUserNameQueryHandler> logger)
         {
@@ -48,8 +48,8 @@ public class GetUserByUserNameQuery : IRequest<User>
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, ERROR_LOADING_USERS);
-                throw new DataAccessException(ERROR_LOADING_USERS, exception);
+                logger.UsersLoadingError(exception);
+                throw new DataAccessException(LogMessageTexts.ErrorLoadingUsers, exception);
             }
         }
     }

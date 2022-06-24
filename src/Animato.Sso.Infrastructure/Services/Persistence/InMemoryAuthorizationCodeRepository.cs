@@ -91,7 +91,7 @@ public class InMemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
         }
         catch (Exception exception)
         {
-            logger.CodesInsertingError(exception);
+            logger.CodesCreatingError(exception);
             throw;
         }
     }

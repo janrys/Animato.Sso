@@ -61,7 +61,7 @@ public class InMemoryTokenRepository : ITokenRepository
         }
         catch (Exception exception)
         {
-            logger.TokensInsertingError(exception);
+            logger.TokensCreatingError(exception);
             throw;
         }
     }
@@ -119,7 +119,7 @@ public class InMemoryTokenRepository : ITokenRepository
         }
         catch (Exception exception)
         {
-            logger.TokensInsertingError(exception);
+            logger.TokensCreatingError(exception);
             throw;
         }
     }

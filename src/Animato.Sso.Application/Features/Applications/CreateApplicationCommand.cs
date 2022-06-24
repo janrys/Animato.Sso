@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Application.Features.Applications.DTOs;
 using Animato.Sso.Application.Features.Users.DTOs;
@@ -41,7 +42,6 @@ public class CreateApplicationCommand : IRequest<Application>
         private readonly IApplicationRepository applicationRepository;
         private readonly ITokenFactory tokenFactory;
         private readonly ILogger<CreateApplicationCommandHandler> logger;
-        private const string ERROR_CREATING_APPLICATION = "Error creating application";
 
         public CreateApplicationCommandHandler(OidcOptions oidcOptions
             , IApplicationRepository applicationRepository
@@ -75,8 +75,8 @@ public class CreateApplicationCommand : IRequest<Application>
             catch (Exceptions.ValidationException) { throw; }
             catch (Exception exception)
             {
-                logger.LogError(exception, ERROR_CREATING_APPLICATION);
-                throw new DataAccessException(ERROR_CREATING_APPLICATION, exception);
+                logger.ApplicationsCreatingError(exception);
+                throw new DataAccessException("Error creating application", exception);
             }
         }
     }

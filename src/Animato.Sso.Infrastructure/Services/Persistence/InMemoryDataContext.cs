@@ -19,6 +19,7 @@ public class InMemoryDataContext
     public List<Application> Applications { get; set; } = new List<Application> { };
     public List<ApplicationRole> ApplicationRoles { get; set; } = new List<ApplicationRole> { };
     public List<UserApplicationRole> UserApplicationRoles { get; set; } = new List<UserApplicationRole> { };
+    public List<ApplicationScope> ApplicationScopes { get; set; } = new List<ApplicationScope> { };
     public List<AuthorizationCode> Codes { get; set; } = new List<AuthorizationCode> { };
     public List<Token> Tokens { get; set; } = new List<Token> { };
     public List<Scope> Scopes { get; set; } = new List<Scope> { };

@@ -15,6 +15,8 @@ public class InMemoryApplicationRepository : IApplicationRepository
     private readonly List<Application> applications;
     private readonly List<ApplicationRole> applicationRoles;
     private readonly List<UserApplicationRole> userApplicationRoles;
+    private readonly List<ApplicationScope> applicationScopes;
+    private readonly List<Scope> scopes;
     private readonly ILogger<InMemoryApplicationRepository> logger;
 
     public InMemoryApplicationRepository(InMemoryDataContext dataContext, ILogger<InMemoryApplicationRepository> logger)
@@ -27,6 +29,8 @@ public class InMemoryApplicationRepository : IApplicationRepository
         applications = dataContext.Applications;
         applicationRoles = dataContext.ApplicationRoles;
         userApplicationRoles = dataContext.UserApplicationRoles;
+        applicationScopes = dataContext.ApplicationScopes;
+        scopes = dataContext.Scopes;
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -106,7 +110,7 @@ public class InMemoryApplicationRepository : IApplicationRepository
         }
         catch (Exception exception)
         {
-            logger.ApplicationsInsertingError(exception);
+            logger.ApplicationsCreatingError(exception);
             throw;
         }
     }
@@ -151,5 +155,39 @@ public class InMemoryApplicationRepository : IApplicationRepository
     {
         applications.Clear();
         return Task.CompletedTask;
+    }
+
+    public Task DeleteApplicationScopes(string name, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var scope = scopes.FirstOrDefault(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+            if (scope is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return Task.FromResult(applicationScopes.RemoveAll(s => s.ScopeId == scope.Id));
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesDeletingError(exception);
+            throw;
+        }
+    }
+
+    public Task<IEnumerable<string>> GetApplicationScopes(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(applicationScopes.Where(r => r.ApplicationId == applicationId)
+                .Join(scopes, ascope => ascope.ScopeId, s => s.Id, (asc, s) => s.Name));
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesLoadingError(exception);
+            throw;
+        }
     }
 }

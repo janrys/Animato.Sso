@@ -17,13 +17,20 @@ public class AzureTableApplicationRepository : IApplicationRepository
     private TableClient TableApplications => dataContext.Applications;
     private TableClient TableApplicationRoles => dataContext.ApplicationRoles;
     private TableClient TableUserApplicationRoles => dataContext.UserApplicationRoles;
+
+    private TableClient TableApplicationScopes => dataContext.ApplicationScopes;
+
     private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
+    private readonly IScopeRepository scopeRepository;
     private readonly ILogger<AzureTableApplicationRepository> logger;
 
-    public AzureTableApplicationRepository(AzureTableStorageDataContext dataContext, ILogger<AzureTableApplicationRepository> logger)
+    public AzureTableApplicationRepository(AzureTableStorageDataContext dataContext
+        , IScopeRepository scopeRepository
+        , ILogger<AzureTableApplicationRepository> logger)
     {
         this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
+        this.scopeRepository = scopeRepository;
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -36,9 +43,8 @@ public class AzureTableApplicationRepository : IApplicationRepository
 
         try
         {
-            var queryResult = TableApplications.QueryAsync<ApplicationTableEntity>(cancellationToken: cancellationToken, maxPerPage: AzureTableStorageDataContext.MAX_PER_PAGE);
             var results = new List<ApplicationTableEntity>();
-
+            var queryResult = TableApplications.QueryAsync<ApplicationTableEntity>(cancellationToken: cancellationToken, maxPerPage: AzureTableStorageDataContext.MAX_PER_PAGE);
             await queryResult.AsPages()
                 .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
                 .ConfigureAwait(false);
@@ -192,7 +198,7 @@ public class AzureTableApplicationRepository : IApplicationRepository
         }
         catch (Exception exception)
         {
-            logger.ApplicationsInsertingError(exception);
+            logger.ApplicationsCreatingError(exception);
             throw;
         }
     }
@@ -253,6 +259,73 @@ public class AzureTableApplicationRepository : IApplicationRepository
         catch (Exception exception)
         {
             logger.ApplicationRolesDeletingError(exception);
+            throw;
+        }
+    }
+
+    public async Task DeleteApplicationScopes(string name, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
+        }
+
+        try
+        {
+            var scope = await scopeRepository.GetScopeByName(name, cancellationToken);
+
+            if (scope is null)
+            {
+                return;
+            }
+
+            var filter = $"RowKey eq '{scope.Id.Value}'";
+            var queryResult = TableApplicationScopes.QueryAsync<ApplicationScopeTableEntity>(filter, cancellationToken: cancellationToken);
+            var results = new List<ApplicationScopeTableEntity>();
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            await AzureTableStorageDataContext.BatchManipulateEntities(TableApplicationScopes
+                , results
+                , TableTransactionActionType.Delete
+                , cancellationToken
+                );
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesDeletingError(exception);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<string>> GetApplicationScopes(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var results = new List<ApplicationScopeTableEntity>();
+            var queryResult = TableApplicationScopes
+                .QueryAsync<ApplicationScopeTableEntity>(s => s.PartitionKey == applicationId.Value.ToString()
+                , cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!results.Any())
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            var scopes = await scopeRepository.GetScopesById(cancellationToken
+                , results.Select(s => s.ToEntity().ScopeId).ToArray());
+
+            return scopes.Select(s => s.Name);
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesLoadingError(exception);
             throw;
         }
     }

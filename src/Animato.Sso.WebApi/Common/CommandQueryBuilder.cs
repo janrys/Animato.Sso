@@ -3,6 +3,8 @@ namespace Animato.Sso.WebApi.Common;
 using System.Security.Claims;
 using Animato.Sso.Application.Features.Applications;
 using Animato.Sso.Application.Features.Applications.DTOs;
+using Animato.Sso.Application.Features.Scopes;
+using Animato.Sso.Application.Features.Scopes.DTOs;
 using Animato.Sso.Application.Features.Tokens;
 using Animato.Sso.Application.Features.Users;
 using Animato.Sso.Application.Features.Users.DTOs;
@@ -10,73 +12,12 @@ using Animato.Sso.Application.Models;
 using Animato.Sso.Domain.Entities;
 using MediatR;
 
-public interface ICommandBuilder
-{
-    IUserCommandBuilder User { get; }
-    ITokenCommandBuilder Token { get; }
-    IApplicationCommandBuilder Application { get; }
-}
-
-public interface IUserCommandBuilder
-{
-    Task<AuthorizationResult> Authorize(AuthorizationRequest authorizationRequest);
-    Task<User> Login(string login, string password);
-    Task<TokenResult> GetToken(TokenRequest tokenRequest);
-    Task<User> Create(CreateUserModel user);
-    Task<User> Update(UserId userID, CreateUserModel user);
-    Task Delete(UserId userID);
-    Task<IEnumerable<ApplicationRole>> RemoveRole(UserId userId, ApplicationRoleId roleId);
-    Task<IEnumerable<ApplicationRole>> AddRole(UserId userId, ApplicationRoleId roleId);
-    Task<IEnumerable<ApplicationRole>> AddRoles(UserId userId, params ApplicationRoleId[] roleIds);
-}
-
-public interface ITokenCommandBuilder
-{
-    Task RevokeToken(string token);
-    Task RevokeAllTokens();
-}
-
-public interface IApplicationCommandBuilder
-{
-    Task<Application> Create(CreateApplicationModel application);
-    Task<Application> Update(ApplicationId applicationId, CreateApplicationModel application);
-    Task Delete(ApplicationId applicationId);
-    Task<IEnumerable<ApplicationRole>> CreateRole(ApplicationId applicationId, CreateApplicationRolesModel roles);
-    Task<ApplicationRole> UpdateRole(ApplicationRoleId roleId, CreateApplicationRoleModel role);
-    Task DeleteRole(ApplicationRoleId roleId);
-}
-
-public interface IQueryBuilder
-{
-    IUserQueryBuilder User { get; }
-    ITokenQueryBuilder Token { get; }
-    IApplicationQueryBuilder Application { get; }
-}
-
-public interface IUserQueryBuilder
-{
-    Task<IEnumerable<User>> GetAll();
-    Task<User> GetByLogin(string login);
-    Task<User> GetById(UserId id);
-    Task<IEnumerable<ApplicationRole>> GetRoles(UserId userId);
-}
-
-public interface ITokenQueryBuilder
-{
-    Task<TokenInfo> GetTokenInfo(string token);
-}
-
-public interface IApplicationQueryBuilder
-{
-    Task<IEnumerable<Application>> GetAll();
-    Task<Application> GetByClientId(string clientId);
-    Task<Application> GetById(ApplicationId applicationId);
-    Task<IEnumerable<ApplicationRole>> GetRolesByApplicationId(ApplicationId applicationId);
-    Task<ApplicationRole> GetRoleById(ApplicationRoleId applicationRoleId);
-}
-
-public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenCommandBuilder, IApplicationCommandBuilder
-    , IQueryBuilder, IUserQueryBuilder, ITokenQueryBuilder, IApplicationQueryBuilder
+public class CommandQueryBuilder :
+    IQueryBuilder, ICommandBuilder
+    , IUserQueryBuilder, IUserCommandBuilder
+    , ITokenQueryBuilder, ITokenCommandBuilder
+    , IApplicationQueryBuilder, IApplicationCommandBuilder
+    , IScopeQueryBuilder, IScopeCommandBuilder
 
 {
     private readonly ISender mediator;
@@ -99,6 +40,8 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
     ITokenQueryBuilder IQueryBuilder.Token => this;
     IApplicationCommandBuilder ICommandBuilder.Application => this;
     IApplicationQueryBuilder IQueryBuilder.Application => this;
+    IScopeCommandBuilder ICommandBuilder.Scope => this;
+    IScopeQueryBuilder IQueryBuilder.Scope => this;
 
     Task<IEnumerable<User>> IUserQueryBuilder.GetAll()
         => mediator.Send(new GetUsersQuery(user), cancellationToken);
@@ -179,5 +122,20 @@ public class CommandQueryBuilder : ICommandBuilder, IUserCommandBuilder, ITokenC
 
     Task<IEnumerable<ApplicationRole>> IUserQueryBuilder.GetRoles(UserId userId)
         => mediator.Send(new GetUserRolesQuery(userId, user), cancellationToken);
+
+    Task<IEnumerable<Scope>> IScopeQueryBuilder.GetAll()
+        => mediator.Send(new GetScopesQuery(user), cancellationToken);
+
+    Task<Scope> IScopeQueryBuilder.GetByName(string name)
+        => mediator.Send(new GetScopeByNameQuery(name, user), cancellationToken);
+
+    Task<IEnumerable<Scope>> IScopeCommandBuilder.Create(CreateScopesModel scopes)
+       => mediator.Send(new CreateScopeCommand(scopes, user), cancellationToken);
+
+    Task<Scope> IScopeCommandBuilder.Update(string oldName, string newName)
+    => mediator.Send(new UpdateScopeCommand(oldName, newName, user), cancellationToken);
+
+    Task IScopeCommandBuilder.Delete(string name)
+    => mediator.Send(new DeleteScopeCommand(name, user), cancellationToken);
 
 }

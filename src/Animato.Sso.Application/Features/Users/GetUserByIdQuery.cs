@@ -47,7 +47,7 @@ public class GetUserByIdQuery : IRequest<User>
             catch (Exception exception)
             {
                 logger.UsersLoadingError(exception);
-                throw new DataAccessException("Error loading users", exception);
+                throw new DataAccessException(LogMessageTexts.ErrorLoadingUsers, exception);
             }
         }
     }

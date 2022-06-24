@@ -80,7 +80,7 @@ public class InMemoryApplicationRoleRepository : IApplicationRoleRepository
         }
         catch (Exception exception)
         {
-            logger.ApplicationRolesInsertingError(exception);
+            logger.ApplicationRolesCreatingError(exception);
             throw;
         }
     }

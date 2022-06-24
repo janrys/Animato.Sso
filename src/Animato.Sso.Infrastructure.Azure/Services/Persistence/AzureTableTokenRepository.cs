@@ -137,7 +137,7 @@ public class AzureTableTokenRepository : ITokenRepository
         }
         catch (Exception exception)
         {
-            logger.TokensInsertingError(exception);
+            logger.TokensCreatingError(exception);
             throw;
         }
     }

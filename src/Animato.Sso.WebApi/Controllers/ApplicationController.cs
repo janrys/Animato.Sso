@@ -236,16 +236,16 @@ public class ApplicationController : ApiControllerBase
     }
 
     /// <summary>
-    /// Create application role
+    /// Create application roles
     /// </summary>
     /// <param name="id">Application identifier</param>
     /// <param name="roles">Application roles</param>
     /// <param name="cancellationToken">Cancelation token</param>
-    /// <returns>Created application role</returns>
-    [HttpPost("{id}/role", Name = "CreateApplicationRole")]
-    public async Task<IActionResult> CreateApplicationRole(string id, [FromBody] CreateApplicationRolesModel roles, CancellationToken cancellationToken)
+    /// <returns>Created application roles</returns>
+    [HttpPost("{id}/role", Name = "CreateApplicationRoles")]
+    public async Task<IActionResult> CreateApplicationRoles(string id, [FromBody] CreateApplicationRolesModel roles, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(CreateApplicationRole));
+        logger.LogDebug("Executing action {Action}", nameof(CreateApplicationRoles));
 
         if (roles is null)
         {

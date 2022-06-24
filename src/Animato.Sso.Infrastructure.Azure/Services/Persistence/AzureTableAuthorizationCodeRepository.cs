@@ -134,7 +134,7 @@ public class AzureTableAuthorizationCodeRepository : IAuthorizationCodeRepositor
         }
         catch (Exception exception)
         {
-            logger.CodesInsertingError(exception);
+            logger.CodesCreatingError(exception);
             throw;
         }
     }

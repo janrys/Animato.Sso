@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Application.Features.Applications.DTOs;
 using Animato.Sso.Application.Features.Users.DTOs;
@@ -43,7 +44,6 @@ public class CreateApplicationRoleCommand : IRequest<IEnumerable<ApplicationRole
         private readonly IApplicationRoleRepository roleRepository;
         private readonly ITokenFactory tokenFactory;
         private readonly ILogger<CreateApplicationRoleCommandHandler> logger;
-        private const string ERROR_CREATING_APPLICATION_ROLE = "Error creating application role";
 
         public CreateApplicationRoleCommandHandler(OidcOptions oidcOptions
             , IApplicationRepository applicationRepository
@@ -88,8 +88,8 @@ public class CreateApplicationRoleCommand : IRequest<IEnumerable<ApplicationRole
             catch (Exceptions.ValidationException) { throw; }
             catch (Exception exception)
             {
-                logger.LogError(exception, ERROR_CREATING_APPLICATION_ROLE);
-                throw new DataAccessException(ERROR_CREATING_APPLICATION_ROLE, exception);
+                logger.ApplicationRolesCreatingError(exception);
+                throw new DataAccessException(LogMessageTexts.ErrorCreatingRoles, exception);
             }
         }
     }

@@ -475,15 +475,19 @@ public class OidcController : ApiControllerBase
     /// <param name="cancellationToken">Cancelation token</param>
     /// <param name="linkGenerator"></param>
     /// <param name="oidcOptions"></param>
+    /// <param name="globalOptions"></param>
     /// <returns>Metadata</returns>
     [HttpGet("/.well-known/oauth-authorization-server", Name = "Metadata")]
     [HttpGet("/.well-known/openid-configuration", Name = "MetadataOidc")]
     public async Task<IActionResult> Metadata([FromServices] IMetadataService metadataService
         , [FromServices] LinkGenerator linkGenerator
         , [FromServices] OidcOptions oidcOptions
+        , [FromServices] GlobalOptions globalOptions
         , CancellationToken cancellationToken)
     {
         logger.LogDebug("Executing action {Action}", nameof(Metadata));
+
+        var scopes = await this.Query(cancellationToken).Scope.GetAll();
 
         cancellationToken.ThrowIfCancellationRequested();
         await Task.CompletedTask;
@@ -494,7 +498,11 @@ public class OidcController : ApiControllerBase
             TokenEndpoint = linkGenerator.GetUriByAction(HttpContext, "Token"),
             RevocationEndpoint = linkGenerator.GetUriByAction(HttpContext, "Revoke"),
             ResponseTypesSupported = new List<string>(new string[] { "code", "token" }),
-            MinimalPasswordLength = oidcOptions.MinimalPasswordLength
+            MinimalPasswordLength = oidcOptions.MinimalPasswordLength,
+            ScopesSupported = scopes.Select(s => s.Name).ToList(),
+            AuthenticationCodeExpiration = oidcOptions.CodeExpirationMinutes * 60,
+            CorrelationHeaderName = globalOptions.CorrelationHeaderName
+
         };
         return Ok(metadata);
     }

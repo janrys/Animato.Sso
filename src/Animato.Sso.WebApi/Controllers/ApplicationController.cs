@@ -1,5 +1,6 @@
 namespace Animato.Sso.WebApi.Controllers;
 using Animato.Sso.Application.Features.Applications.DTOs;
+using Animato.Sso.Application.Features.Scopes.DTOs;
 using Animato.Sso.WebApi.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -340,5 +341,113 @@ public class ApplicationController : ApiControllerBase
 
         await this.CommandForCurrentUser(cancellationToken).Application.DeleteRole(roleId);
         return Ok();
+    }
+
+    /// <summary>
+    /// Get all scopes of the application
+    /// </summary>
+    /// <param name="id">Application identifier</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>List of scopes allowed for the application</returns>
+    [HttpGet("{id}/scope", Name = "GetAllApplicationScopes")]
+    public async Task<IActionResult> GetAllApplicationScopes(string id, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(GetAllApplicationScopes));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+        Domain.Entities.ApplicationId applicationId;
+        if (Guid.TryParse(id, out var parsedApplicationId))
+        {
+            applicationId = new Domain.Entities.ApplicationId(parsedApplicationId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        var scopes = await this.QueryForCurrentUser(cancellationToken).Application.GetScopes(applicationId);
+
+        return Ok(scopes);
+    }
+
+    /// <summary>
+    /// Add allowed scopes to application
+    /// </summary>
+    /// <param name="id">Application identifier</param>
+    /// <param name="scopes">List of scope names</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>All scopes allowed for application</returns>
+    [HttpPost("{id}/scope", Name = "AddApplicationScopes")]
+    public async Task<IActionResult> AddApplicationScopes(string id, [FromBody] CreateScopesModel scopes, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(AddApplicationScopes));
+
+        if (scopes is null || scopes.Names is null
+            || !scopes.Names.Any()
+            || !scopes.Names.Any(n => !string.IsNullOrEmpty(n)))
+        {
+            return BadRequest($"{nameof(scopes)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        Domain.Entities.ApplicationId applicationId;
+        if (Guid.TryParse(id, out var parsedApplicationId))
+        {
+            applicationId = new Domain.Entities.ApplicationId(parsedApplicationId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        await this.CommandForCurrentUser(cancellationToken).Application.AddScopes(applicationId, scopes);
+        var allScopes = await this.QueryForCurrentUser(cancellationToken).Application.GetScopes(applicationId);
+        return Ok(allScopes);
+    }
+
+    /// <summary>
+    /// Delete application role
+    /// </summary>
+    /// <param name="id">Application id to delete</param>
+    /// <param name="scopes">List of scopes to remove from application</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>All scopes allowed for application</returns>
+    [HttpDelete("{id}/scope", Name = "RemoveApplicationScopes")]
+    public async Task<IActionResult> RemoveApplicationScopes(string id, [FromBody] CreateScopesModel scopes, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(RemoveApplicationScopes));
+
+        if (scopes is null || scopes.Names is null
+            || !scopes.Names.Any()
+            || !scopes.Names.Any(n => !string.IsNullOrEmpty(n)))
+        {
+            return BadRequest($"{nameof(scopes)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        Domain.Entities.ApplicationId applicationId;
+        if (Guid.TryParse(id, out var parsedApplicationId))
+        {
+            applicationId = new Domain.Entities.ApplicationId(parsedApplicationId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        await this.CommandForCurrentUser(cancellationToken).Application.RemoveScopes(applicationId, scopes);
+        var allScopes = await this.QueryForCurrentUser(cancellationToken).Application.GetScopes(applicationId);
+        return Ok(allScopes);
     }
 }

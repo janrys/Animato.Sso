@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
 using FluentValidation;
@@ -31,7 +32,6 @@ public class GetApplicationRoleByIdQuery : IRequest<ApplicationRole>
     {
         private readonly IApplicationRoleRepository roleRepository;
         private readonly ILogger<GetApplicationRoleByIdQueryHandler> logger;
-        private const string ERROR_LOADING_APPLICATION_ROLES = "Error loading application roles";
 
         public GetApplicationRoleByIdQueryHandler(IApplicationRoleRepository roleRepository, ILogger<GetApplicationRoleByIdQueryHandler> logger)
         {
@@ -47,8 +47,8 @@ public class GetApplicationRoleByIdQuery : IRequest<ApplicationRole>
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, ERROR_LOADING_APPLICATION_ROLES);
-                throw new DataAccessException(ERROR_LOADING_APPLICATION_ROLES, exception);
+                logger.ApplicationRolesLoadingError(exception);
+                throw new DataAccessException(LogMessageTexts.ErrorLoadingRoles, exception);
             }
         }
     }

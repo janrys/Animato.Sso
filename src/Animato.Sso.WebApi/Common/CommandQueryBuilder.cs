@@ -137,5 +137,12 @@ public class CommandQueryBuilder :
 
     Task IScopeCommandBuilder.Delete(string name)
     => mediator.Send(new DeleteScopeCommand(name, user), cancellationToken);
+    Task<IEnumerable<Scope>> IApplicationQueryBuilder.GetScopes(ApplicationId applicationId)
+        => mediator.Send(new GetApplicationScopesQuery(applicationId, user), cancellationToken);
 
+    Task IApplicationCommandBuilder.RemoveScopes(ApplicationId applicationId, CreateScopesModel scopes)
+        => mediator.Send(new RemoveApplicationScopesCommand(applicationId, scopes, user), cancellationToken);
+
+    Task IApplicationCommandBuilder.AddScopes(ApplicationId applicationId, CreateScopesModel scopes)
+        => mediator.Send(new AddApplicationScopesCommand(applicationId, scopes, user), cancellationToken);
 }

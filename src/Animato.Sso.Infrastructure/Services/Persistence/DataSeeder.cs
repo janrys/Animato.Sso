@@ -29,6 +29,7 @@ public class DataSeeder : IDataSeeder
     private Application crmAplication;
     private readonly List<Application> seededApplications = new();
     private readonly List<ApplicationRole> seededApplicationRoles = new();
+    private readonly List<Scope> seededScopes = new();
 
     private static readonly Guid AdminUserId = Guid.Parse("551845DC-0000-0000-0000-F401AF408965");
     private static readonly Guid TesterUserId = Guid.Parse("661845DC-0000-0000-0000-F401AF408966");
@@ -136,12 +137,20 @@ public class DataSeeder : IDataSeeder
 
     private async Task SeedScopes()
     {
-        await scopeRepository.Create(Scope.All, Scope.All.Id, CancellationToken.None);
-        await scopeRepository.Create(Scope.General, Scope.General.Id, CancellationToken.None);
-        await scopeRepository.Create(Scope.Online, Scope.Online.Id, CancellationToken.None);
-        await scopeRepository.Create(Scope.Phone, Scope.Phone.Id, CancellationToken.None);
-        await scopeRepository.Create(Scope.Role, Scope.Role.Id, CancellationToken.None);
-        await scopeRepository.Create(Scope.Mail, Scope.Mail.Id, CancellationToken.None);
+        seededScopes.Add(await scopeRepository.Create(Scope.All, Scope.All.Id, CancellationToken.None));
+        seededScopes.Add(await scopeRepository.Create(Scope.General, Scope.General.Id, CancellationToken.None));
+        seededScopes.Add(await scopeRepository.Create(Scope.Online, Scope.Online.Id, CancellationToken.None));
+        seededScopes.Add(await scopeRepository.Create(Scope.Phone, Scope.Phone.Id, CancellationToken.None));
+        seededScopes.Add(await scopeRepository.Create(Scope.Role, Scope.Role.Id, CancellationToken.None));
+        seededScopes.Add(await scopeRepository.Create(Scope.Mail, Scope.Mail.Id, CancellationToken.None));
+
+
+        foreach (var application in seededApplications)
+        {
+            await applicationRepository.CreateApplicationScopes(application.Id
+                , CancellationToken.None
+                , seededScopes.Where(s => s.Id != Scope.Phone.Id).Select(s => s.Id).ToArray());
+        }
         logger.DataSeededInformation("Scopes");
     }
 

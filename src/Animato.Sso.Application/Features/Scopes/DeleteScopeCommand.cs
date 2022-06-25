@@ -72,7 +72,7 @@ public class DeleteScopeCommand : IRequest<Unit>
                         );
                 }
 
-                await applicationRepository.DeleteApplicationScopes(scope.Name, cancellationToken);
+                await applicationRepository.DeleteApplicationScope(scope.Id, cancellationToken);
                 await scopeRepository.Delete(scope.Name, cancellationToken);
                 return Unit.Value;
             }

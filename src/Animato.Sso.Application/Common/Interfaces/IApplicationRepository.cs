@@ -15,6 +15,8 @@ public interface IApplicationRepository
     Task<Application> Update(Application application, CancellationToken cancellationToken);
     Task Delete(ApplicationId applicationId, CancellationToken cancellationToken);
     Task Clear(CancellationToken cancellationToken);
-    Task DeleteApplicationScopes(string name, CancellationToken cancellationToken);
-    Task<IEnumerable<string>> GetApplicationScopes(ApplicationId applicationId, CancellationToken cancellationToken);
+    Task DeleteApplicationScope(ScopeId scopeId, CancellationToken cancellationToken);
+    Task DeleteApplicationScope(ApplicationId applicationId, ScopeId scopeId, CancellationToken cancellationToken);
+    Task CreateApplicationScopes(ApplicationId applicationId, CancellationToken cancellationToken, params ScopeId[] scopes);
+    Task<IEnumerable<Scope>> GetScopes(ApplicationId applicationId, CancellationToken cancellationToken);
 }

@@ -153,15 +153,61 @@ public class InMemoryApplicationRepository : IApplicationRepository
 
     public Task Clear(CancellationToken cancellationToken)
     {
+        applicationScopes.Clear();
         applications.Clear();
         return Task.CompletedTask;
     }
 
-    public Task DeleteApplicationScopes(string name, CancellationToken cancellationToken)
+    public Task<IEnumerable<Scope>> GetScopes(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
     {
         try
         {
-            var scope = scopes.FirstOrDefault(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return Task.FromResult(applicationScopes.Where(r => r.ApplicationId == applicationId)
+                .Join(scopes, ascope => ascope.ScopeId, s => s.Id, (asc, s) => s));
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesLoadingError(exception);
+            throw;
+        }
+    }
+
+    public Task CreateApplicationScopes(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken, params ScopeId[] scopes)
+    {
+        if (scopes is null || !scopes.Any())
+        {
+            throw new ArgumentNullException(nameof(scopes));
+        }
+
+        try
+        {
+            var storedApplicationScopes = applicationScopes.Where(s => s.ApplicationId == applicationId && scopes.Any(ids => s.ScopeId == ids));
+
+            if (storedApplicationScopes.Any())
+            {
+                throw new ValidationException(
+                        ValidationException.CreateFailure("ApplicationScope"
+                        , $"Cannot add new application scopes, because already exists application id / scope id {string.Join(", ", storedApplicationScopes.Select(s => $"{s.ApplicationId.Value} / {s.ScopeId}"))} ")
+                        );
+            }
+
+            applicationScopes.AddRange(scopes.Select(s => new ApplicationScope() { ApplicationId = applicationId, ScopeId = s }));
+
+            return Task.CompletedTask;
+        }
+        catch (ValidationException) { throw; }
+        catch (Exception exception)
+        {
+            logger.ScopesCreatingError(exception);
+            throw;
+        }
+    }
+
+    public Task DeleteApplicationScope(ScopeId scopeId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var scope = scopes.FirstOrDefault(s => s.Id == scopeId);
 
             if (scope is null)
             {
@@ -177,16 +223,22 @@ public class InMemoryApplicationRepository : IApplicationRepository
         }
     }
 
-    public Task<IEnumerable<string>> GetApplicationScopes(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
+    public Task DeleteApplicationScope(Domain.Entities.ApplicationId applicationId, ScopeId scopeId, CancellationToken cancellationToken)
     {
         try
         {
-            return Task.FromResult(applicationScopes.Where(r => r.ApplicationId == applicationId)
-                .Join(scopes, ascope => ascope.ScopeId, s => s.Id, (asc, s) => s.Name));
+            var scope = scopes.FirstOrDefault(s => s.Id == scopeId);
+
+            if (scope is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return Task.FromResult(applicationScopes.RemoveAll(s => s.ScopeId == scope.Id && s.ApplicationId == applicationId));
         }
         catch (Exception exception)
         {
-            logger.ScopesLoadingError(exception);
+            logger.ScopesDeletingError(exception);
             throw;
         }
     }

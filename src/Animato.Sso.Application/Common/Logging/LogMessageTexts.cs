@@ -13,4 +13,8 @@ public static class LogMessageTexts
     public const string ErrorCreatingUsers = $"{ErrorCreating} users";
     public const string ErrorUpdatingUsers = $"{ErrorUpdating} users";
     public const string ErrorDeletingUsers = $"{ErrorDeleting} users";
+    public const string ErrorLoadingRoles = $"{ErrorLoading} roles";
+    public const string ErrorCreatingRoles = $"{ErrorCreating} roles";
+    public const string ErrorUpdatingRoles = $"{ErrorUpdating} roles";
+    public const string ErrorDeletingRoles = $"{ErrorDeleting} roles";
 }

@@ -84,4 +84,8 @@ public class SystemMetadata
     [JsonProperty("correlation_header_name")]
     [JsonPropertyName("correlation_header_name")]
     public string CorrelationHeaderName { get; set; }
+
+    [JsonProperty("authentication_code_expiration")]
+    [JsonPropertyName("authentication_code_expiration")]
+    public int AuthenticationCodeExpiration { get; set; }
 }

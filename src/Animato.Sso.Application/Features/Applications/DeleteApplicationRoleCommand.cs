@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Application.Common.Logging;
 using Animato.Sso.Application.Exceptions;
 using FluentValidation;
 using MediatR;
@@ -32,7 +33,6 @@ public class DeleteApplicationRoleCommand : IRequest<Unit>
         private readonly IApplicationRoleRepository roleRepository;
         private readonly IUserRepository userRepository;
         private readonly ILogger<DeleteApplicationRoleCommandHandler> logger;
-        private const string ERROR_DELETING_APPLICATION_ROLES = "Error deleting application roles";
 
         public DeleteApplicationRoleCommandHandler(IApplicationRoleRepository roleRepository
             , IUserRepository userRepository
@@ -68,8 +68,8 @@ public class DeleteApplicationRoleCommand : IRequest<Unit>
             catch (Exceptions.ValidationException) { throw; }
             catch (Exception exception)
             {
-                logger.LogError(exception, ERROR_DELETING_APPLICATION_ROLES);
-                throw new DataAccessException(ERROR_DELETING_APPLICATION_ROLES, exception);
+                logger.ApplicationRolesDeletingError(exception);
+                throw new DataAccessException(LogMessageTexts.ErrorDeletingRoles, exception);
             }
         }
     }

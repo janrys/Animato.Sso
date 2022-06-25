@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.WebApi.Common;
+namespace Animato.Sso.WebApi.Common;
 using Animato.Sso.Domain.Entities;
 
 public interface IApplicationQueryBuilder
@@ -8,4 +8,5 @@ public interface IApplicationQueryBuilder
     Task<Application> GetById(ApplicationId applicationId);
     Task<IEnumerable<ApplicationRole>> GetRolesByApplicationId(ApplicationId applicationId);
     Task<ApplicationRole> GetRoleById(ApplicationRoleId applicationRoleId);
+    Task<IEnumerable<Scope>> GetScopes(ApplicationId applicationId);
 }

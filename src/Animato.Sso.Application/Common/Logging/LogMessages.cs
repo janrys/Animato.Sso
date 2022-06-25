@@ -43,16 +43,16 @@ public static partial class LogMessages
     [LoggerMessage(20004, LogLevel.Error, "Error deleting applications")]
     public static partial void ApplicationsDeletingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20005, LogLevel.Error, "Error loading roles")]
+    [LoggerMessage(20005, LogLevel.Error, LogMessageTexts.ErrorLoadingRoles)]
     public static partial void ApplicationRolesLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20006, LogLevel.Error, "Error creating roles")]
+    [LoggerMessage(20006, LogLevel.Error, LogMessageTexts.ErrorCreatingRoles)]
     public static partial void ApplicationRolesCreatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20007, LogLevel.Error, "Error updating roles")]
+    [LoggerMessage(20007, LogLevel.Error, LogMessageTexts.ErrorUpdatingRoles)]
     public static partial void ApplicationRolesUpdatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20008, LogLevel.Error, "Error deleting roles")]
+    [LoggerMessage(20008, LogLevel.Error, LogMessageTexts.ErrorDeletingRoles)]
     public static partial void ApplicationRolesDeletingError(this ILogger logger, Exception exception);
 
     [LoggerMessage(20009, LogLevel.Error, "Error loading codes")]

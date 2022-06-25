@@ -1,6 +1,6 @@
 # configuration
 $environment = "dev";
-$systemPrefix = "kasab";
+$systemPrefix = "sso";
 $resourceLocation = "West Europe";
 $skipLogin = $true;
 $cleanResources = $true;
@@ -40,70 +40,56 @@ Function LogError
 
 
 # prepare resource group names
-$resourceGroupShared = "$resourceNamePrefix-shared-rg";
+$resourceGroup = "$resourceNamePrefix-rg";
+$resourceGroupShared = "animato-$environment-shared-rg";
 
 # prepare resource names
-$logAnalyticsWorkspaceName = "$resourceNamePrefix-law";
-$appInsightsName = "$resourceNamePrefix-apin";
-$keyVaultName = "$resourceNamePrefix-kv";
-$storageAccountName = $systemPrefix + $environment + "datasa01";
-$appServicePlanName = "$resourceNamePrefix-asp01";
-$appServiceFEName = "$resourceNamePrefix-wfe-ws";
-$appServiceBEName = "$resourceNamePrefix-wapi-ws";
-$appServiceFunctionName = "$resourceNamePrefix-azf-fnc";
-$cosmosDbName = "$resourceNamePrefix-cdb";
-$searchServiceName = "$resourceNamePrefix-azs";
-$redisCacheName = "$resourceNamePrefix-red";
-
-# prepare PEN names
-$keyVaultPENName = "$keyVaultName-pen";
-$storageBlobPENName = "$resourceNamePrefix-blob-datasa01-pen";
-$storageTablePENName = "$resourceNamePrefix-table-datasa01-pen";
-$appServiceFEPENName = "$resourceNamePrefix-wfe-pen";
-$appServiceBEPENName = "$resourceNamePrefix-wapi-pen";
-$searchServicePENName = "$searchServiceName-pen";
-$cosmosDbPENName = "$cosmosDbName-pen";
-$redisCachePENName = "$redisCacheName-pen";
+$appInsightsName = "animato-$environment-shared-apin";
+$storageAccountName = $resourceNamePrefix.Replace("-", "") + "datasa01";
+$appServicePlanName = "$resourceNamePrefix-asp";
+$appServiceAPIName = "animato-$resourceNamePrefix-api";
 
 # connect
 if(!$skipLogin){
-    az login;
+    az login --use-device-code;
 }
 
 # clean resources
 if($cleanResources){
 LogInfo -message "Cleaning resources";
-az monitor app-insights component delete -a $appInsightsName -g $resourceGroupShared;
-az monitor log-analytics workspace delete  -n $logAnalyticsWorkspaceName -g $resourceGroupShared -f -y;
+az webapp delete -n $appServiceAPIName -g $resourceGroup;
+az appservice plan delete -n $appServicePlanName -g $resourceGroup -y;
+az storage account delete -n $storageAccountName -g $resourceGroup -y;
+az group delete -n $resourceGroup -y;
 LogInfo -message "Cleaning resources finished OK";
 }
 
 # create resources
 LogInfo -message "Creating resources";
-$resourceExistenceCheck = az monitor log-analytics workspace list --query "[?name=='$logAnalyticsWorkspaceName']" | ConvertFrom-Json;
 
-if ($resourceExistenceCheck.Length -ne 0) {
-    LogError -message "Error creating log analytics worskpace. It already exists.";
-    break;
-}
-
-$statusMessage = "Creating log analytics worskpace $logAnalyticsWorkspaceName";
+$statusMessage = "Creating resource group $resourceGroup";
 LogInfo -message $statusMessage;
-$logAnalyticsWorskpaceInstance = az monitor log-analytics workspace create -g $resourceGroupShared -n $logAnalyticsWorkspaceName -l $resourceLocation;
+az group create -l $resourceLocation -n $resourceGroup;
 LogInfo -message "$statusMessage finished OK";
 
-
-$resourceExistenceCheck = az monitor app-insights component show -a $appInsightsName -g $resourceGroupShared | ConvertFrom-Json;
-
-if ($resourceExistenceCheck.Length -ne 0) {
-    LogError -message "Error creating application insights. It already exists.";
-    break;
-}
-
-$statusMessage = "Creating application insights $appInsightsName";
+$statusMessage = "Creating storage account $storageAccountName";
 LogInfo -message $statusMessage;
-az monitor app-insights component create -a $appInsightsName -l $resourceLocation -g $resourceGroupShared --workspace $logAnalyticsWorskpaceInstance.id;
+az storage account create -n $storageAccountName -g $resourceGroup -l $resourceLocation --sku Standard_LRS --kind StorageV2;
 LogInfo -message "$statusMessage finished OK";
+
+$statusMessage = "Creating app service $appServicePlanName";
+LogInfo -message $statusMessage;
+az appservice plan create -n $appServicePlanName -g $resourceGroup -l $resourceLocation --sku F1;
+LogInfo -message "$statusMessage finished OK";
+
+$statusMessage = "Creating web site $appServiceAPIName";
+LogInfo -message $statusMessage;
+az webapp create -n $appServiceAPIName -g $resourceGroup -p $appServicePlanName --runtime "dotnet:6";
+
+[String]$instrumentationKey = (az monitor app-insights component show --app $appInsightsName --resource-group $resourceGroupShared --query  "instrumentationKey" --output tsv)
+az webapp config appsettings set --name $appServiceAPIName --resource-group $resourceGroup --settings APPINSIGHTS_INSTRUMENTATIONKEY=$instrumentationKey APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=$instrumentationKey ApplicationInsightsAgent_EXTENSION_VERSION=~2
+LogInfo -message "$statusMessage finished OK";
+
 LogInfo -message "Creating resources finished OK";
 
 

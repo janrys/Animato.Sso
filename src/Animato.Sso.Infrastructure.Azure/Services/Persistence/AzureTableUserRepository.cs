@@ -17,9 +17,11 @@ public class AzureTableUserRepository : IUserRepository
     private TableClient TableUsers => dataContext.Users;
     private TableClient TableUserApplicationRoles => dataContext.UserApplicationRoles;
     private TableClient TableApplicationRoles => dataContext.ApplicationRoles;
+    private TableClient TableUserClaims => dataContext.UserClaims;
     private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
     private readonly IDateTimeService dateTime;
+    private readonly IClaimRepository claimRepository;
     private readonly ILogger<AzureTableUserRepository> logger;
 
     public AzureTableUserRepository(AzureTableStorageDataContext dataContext
@@ -400,6 +402,37 @@ public class AzureTableUserRepository : IUserRepository
         catch (Exception exception)
         {
             logger.ApplicationRolesDeletingError(exception);
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<UserClaim>> GetClaims(ClaimId id, int topCount, CancellationToken cancellationToken)
+    {
+        if (topCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(topCount), topCount, "Must be greater than 0");
+        }
+
+        try
+        {
+            var results = new List<UserClaimTableEntity>();
+            var queryResult = TableUsers.QueryAsync<UserClaimTableEntity>(a => a.RowKey == id.Value.ToString(), cancellationToken: cancellationToken);
+
+            await foreach (var page in queryResult.AsPages())
+            {
+                results.AddRange(page.Values);
+
+                if (results.Count >= topCount)
+                {
+                    break;
+                }
+            }
+
+            return results.Take(topCount).Select(c => c.ToEntity());
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
             throw;
         }
     }

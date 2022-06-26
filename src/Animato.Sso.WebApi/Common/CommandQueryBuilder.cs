@@ -3,6 +3,8 @@ namespace Animato.Sso.WebApi.Common;
 using System.Security.Claims;
 using Animato.Sso.Application.Features.Applications;
 using Animato.Sso.Application.Features.Applications.DTOs;
+using Animato.Sso.Application.Features.Claims;
+using Animato.Sso.Application.Features.Claims.DTOs;
 using Animato.Sso.Application.Features.Scopes;
 using Animato.Sso.Application.Features.Scopes.DTOs;
 using Animato.Sso.Application.Features.Tokens;
@@ -18,6 +20,7 @@ public class CommandQueryBuilder :
     , ITokenQueryBuilder, ITokenCommandBuilder
     , IApplicationQueryBuilder, IApplicationCommandBuilder
     , IScopeQueryBuilder, IScopeCommandBuilder
+    , IClaimQueryBuilder, IClaimCommandBuilder
 
 {
     private readonly ISender mediator;
@@ -42,6 +45,8 @@ public class CommandQueryBuilder :
     IApplicationQueryBuilder IQueryBuilder.Application => this;
     IScopeCommandBuilder ICommandBuilder.Scope => this;
     IScopeQueryBuilder IQueryBuilder.Scope => this;
+    IClaimCommandBuilder ICommandBuilder.Claim => this;
+    IClaimQueryBuilder IQueryBuilder.Claim => this;
 
     Task<IEnumerable<User>> IUserQueryBuilder.GetAll()
         => mediator.Send(new GetUsersQuery(user), cancellationToken);
@@ -145,4 +150,14 @@ public class CommandQueryBuilder :
 
     Task IApplicationCommandBuilder.AddScopes(ApplicationId applicationId, CreateScopesModel scopes)
         => mediator.Send(new AddApplicationScopesCommand(applicationId, scopes, user), cancellationToken);
+    Task<IEnumerable<Domain.Entities.Claim>> IClaimQueryBuilder.GetAll()
+        => mediator.Send(new GetClaimsQuery(user), cancellationToken);
+    Task<Domain.Entities.Claim> IClaimQueryBuilder.GetByName(string name)
+        => mediator.Send(new GetClaimByNameQuery(name, user), cancellationToken);
+    Task<Domain.Entities.Claim> IClaimCommandBuilder.Create(CreateClaimModel claim)
+       => mediator.Send(new CreateClaimCommand(claim, user), cancellationToken);
+    Task<Domain.Entities.Claim> IClaimCommandBuilder.Update(string oldName, CreateClaimModel claim)
+    => mediator.Send(new UpdateClaimCommand(oldName, claim, user), cancellationToken);
+    Task IClaimCommandBuilder.Delete(string name)
+    => mediator.Send(new DeleteClaimCommand(name, user), cancellationToken);
 }

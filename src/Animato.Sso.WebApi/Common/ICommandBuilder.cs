@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.WebApi.Common;
+namespace Animato.Sso.WebApi.Common;
 
 public interface ICommandBuilder
 {
@@ -6,4 +6,5 @@ public interface ICommandBuilder
     ITokenCommandBuilder Token { get; }
     IApplicationCommandBuilder Application { get; }
     IScopeCommandBuilder Scope { get; }
+    IClaimCommandBuilder Claim { get; }
 }

@@ -15,6 +15,9 @@ public class InMemoryUserRepository : IUserRepository
     private readonly List<User> users;
     private readonly List<UserApplicationRole> userApplicationRoles;
     private readonly List<ApplicationRole> applicationRoles;
+    private readonly List<UserClaim> userClaims;
+    private readonly List<Claim> claims;
+    private readonly List<Token> tokens;
     private readonly IDateTimeService dateTime;
     private readonly ILogger<InMemoryUserRepository> logger;
 
@@ -30,6 +33,9 @@ public class InMemoryUserRepository : IUserRepository
         users = dataContext.Users;
         userApplicationRoles = dataContext.UserApplicationRoles;
         applicationRoles = dataContext.ApplicationRoles;
+        userClaims = dataContext.UserClaims;
+        claims = dataContext.Claims;
+        tokens = dataContext.Tokens;
         this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -91,6 +97,8 @@ public class InMemoryUserRepository : IUserRepository
     {
         try
         {
+            userClaims.RemoveAll(a => a.UserId == userId);
+            tokens.RemoveAll(a => a.UserId == userId);
             return Task.FromResult(users.RemoveAll(a => a.Id == userId));
         }
         catch (Exception exception)
@@ -285,5 +293,30 @@ public class InMemoryUserRepository : IUserRepository
     {
         users.Clear();
         return Task.CompletedTask;
+    }
+
+    public Task<IEnumerable<UserClaim>> GetClaims(ClaimId id, int topCount, CancellationToken cancellationToken)
+    {
+        if (topCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(topCount), topCount, "Must be greater than 0");
+        }
+
+        try
+        {
+            var storedUserClaims = userClaims.Where(c => c.ClaimId == id);
+
+            if (!storedUserClaims.Any())
+            {
+                return Task.FromResult(Enumerable.Empty<UserClaim>());
+            }
+
+            return Task.FromResult(storedUserClaims.Take(topCount));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
     }
 }

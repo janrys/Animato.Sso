@@ -52,8 +52,8 @@ public class ScopeController : ApiControllerBase
             return BadRequest($"{nameof(scopes)} must have a value");
         }
 
-        var createdApplication = await this.CommandForCurrentUser(cancellationToken).Scope.Create(scopes);
-        return Ok(createdApplication);
+        var createdScope = await this.CommandForCurrentUser(cancellationToken).Scope.Create(scopes);
+        return Ok(createdScope);
     }
 
     /// <summary>

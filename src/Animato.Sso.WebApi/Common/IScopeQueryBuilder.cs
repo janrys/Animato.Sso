@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.WebApi.Common;
+namespace Animato.Sso.WebApi.Common;
 using Animato.Sso.Domain.Entities;
 
 public interface IScopeQueryBuilder

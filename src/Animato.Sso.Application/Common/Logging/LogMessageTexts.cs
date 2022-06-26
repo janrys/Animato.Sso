@@ -17,4 +17,16 @@ public static class LogMessageTexts
     public const string ErrorCreatingRoles = $"{ErrorCreating} roles";
     public const string ErrorUpdatingRoles = $"{ErrorUpdating} roles";
     public const string ErrorDeletingRoles = $"{ErrorDeleting} roles";
+    public const string ErrorLoadingClaims = $"{ErrorLoading} claims";
+    public const string ErrorCreatingClaims = $"{ErrorCreating} claims";
+    public const string ErrorUpdatingClaims = $"{ErrorUpdating} claims";
+    public const string ErrorDeletingClaims = $"{ErrorDeleting} claims";
+    public const string ErrorLoadingTokens = $"{ErrorLoading} tokens";
+    public const string ErrorCreatingTokens = $"{ErrorCreating} tokens";
+    public const string ErrorUpdatingTokens = $"{ErrorUpdating} tokens";
+    public const string ErrorDeletingTokens = $"{ErrorDeleting} tokens";
+    public const string ErrorLoadingCodes = $"{ErrorLoading} codes";
+    public const string ErrorCreatingCodes = $"{ErrorCreating} codes";
+    public const string ErrorUpdatingCodes = $"{ErrorUpdating} codes";
+    public const string ErrorDeletingCodes = $"{ErrorDeleting} codes";
 }

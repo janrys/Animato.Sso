@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Animato.Sso.Application.Common.Interfaces;
 using Animato.Sso.Application.Common.Logging;
+using Animato.Sso.Application.Exceptions;
 using Animato.Sso.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,7 @@ public class InMemoryClaimRepository : IClaimRepository
     private readonly List<Claim> claims;
     private readonly List<ClaimScope> claimScopes;
     private readonly List<Scope> scopes;
+    private readonly List<UserClaim> userClaims;
     private readonly ILogger<InMemoryClaimRepository> logger;
 
     public InMemoryClaimRepository(InMemoryDataContext dataContext
@@ -26,6 +28,7 @@ public class InMemoryClaimRepository : IClaimRepository
         claims = dataContext.Claims;
         claimScopes = dataContext.ClaimScopes;
         scopes = dataContext.Scopes;
+        userClaims = dataContext.UserClaims;
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -50,6 +53,50 @@ public class InMemoryClaimRepository : IClaimRepository
         catch (Exception exception)
         {
             logger.ScopesCreatingError(exception);
+            throw;
+        }
+    }
+
+    public Task<IEnumerable<Claim>> GetAll(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(claims.AsEnumerable());
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+    public Task<Claim> GetClaimByName(string name, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
+        }
+
+        try
+        {
+            return Task.FromResult(claims.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+    public Task<Claim> GetBydId(ClaimId id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(claims.FirstOrDefault(x => x.Id == id));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
             throw;
         }
     }
@@ -79,4 +126,80 @@ public class InMemoryClaimRepository : IClaimRepository
             throw;
         }
     }
+    public async Task<Claim> Update(Claim claim, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var scope = await GetBydId(claim.Id, cancellationToken);
+
+            if (scope == null)
+            {
+                throw new NotFoundException(nameof(Claim), claim.Id);
+            }
+
+            claims.RemoveAll(s => s.Id == claim.Id);
+            claims.Add(claim);
+
+            return claim;
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsUpdatingError(exception);
+            throw;
+        }
+    }
+
+    public async Task Delete(string name, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
+        }
+
+        try
+        {
+            var claim = await GetClaimByName(name, cancellationToken);
+
+            if (claim is null)
+            {
+                return;
+            }
+
+            await RemoveScopesByClaim(claim.Id, cancellationToken);
+            userClaims.RemoveAll(c => c.ClaimId == claim.Id);
+            claims.RemoveAll(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsDeletingError(exception);
+            throw;
+        }
+    }
+
+    public Task RemoveScopesByClaim(ClaimId id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(claimScopes.RemoveAll(s => s.ClaimId == id));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsDeletingError(exception);
+            throw;
+        }
+    }
+
+    public Task RemoveScopesByScope(ScopeId scopeId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(claimScopes.RemoveAll(s => s.ScopeId == scopeId));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsDeletingError(exception);
+            throw;
+        }
+    }
+
 }

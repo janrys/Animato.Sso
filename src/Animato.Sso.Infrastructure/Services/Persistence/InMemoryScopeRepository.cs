@@ -120,7 +120,7 @@ public class InMemoryScopeRepository : IScopeRepository
 
             if (scope == null)
             {
-                throw new NotFoundException(nameof(Application), oldName);
+                throw new NotFoundException(nameof(Scope), oldName);
             }
 
             scope.Name = newName;
@@ -147,7 +147,7 @@ public class InMemoryScopeRepository : IScopeRepository
         }
         catch (Exception exception)
         {
-            logger.ApplicationsDeletingError(exception);
+            logger.ScopesDeletingError(exception);
             throw;
         }
     }

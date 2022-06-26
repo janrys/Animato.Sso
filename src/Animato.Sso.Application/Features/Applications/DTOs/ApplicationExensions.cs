@@ -1,4 +1,6 @@
 namespace Animato.Sso.Application.Features.Applications.DTOs;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Animato.Sso.Application.Common;
@@ -23,6 +25,21 @@ public static class ApplicationExensions
         , OidcOptions oidcOptions
         , ITokenFactory tokenFactory)
     {
+        if (application is null)
+        {
+            throw new ArgumentNullException(nameof(application));
+        }
+
+        if (oidcOptions is null)
+        {
+            throw new ArgumentNullException(nameof(oidcOptions));
+        }
+
+        if (tokenFactory is null)
+        {
+            throw new ArgumentNullException(nameof(tokenFactory));
+        }
+
         if (application.RedirectUris is null || !application.RedirectUris.Any())
         {
             throw new Exceptions.ValidationException(

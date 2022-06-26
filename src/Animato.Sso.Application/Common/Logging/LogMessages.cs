@@ -55,13 +55,13 @@ public static partial class LogMessages
     [LoggerMessage(20008, LogLevel.Error, LogMessageTexts.ErrorDeletingRoles)]
     public static partial void ApplicationRolesDeletingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20009, LogLevel.Error, "Error loading codes")]
+    [LoggerMessage(20009, LogLevel.Error, LogMessageTexts.ErrorLoadingCodes)]
     public static partial void CodesLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20010, LogLevel.Error, "Error creating codes")]
+    [LoggerMessage(20010, LogLevel.Error, LogMessageTexts.ErrorCreatingCodes)]
     public static partial void CodesCreatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20011, LogLevel.Error, "Error deleting codes")]
+    [LoggerMessage(20011, LogLevel.Error, LogMessageTexts.ErrorDeletingCodes)]
     public static partial void CodesDeletingError(this ILogger logger, Exception exception);
 
     [LoggerMessage(20012, LogLevel.Error, LogMessageTexts.ErrorLoadingUsers)]
@@ -76,28 +76,28 @@ public static partial class LogMessages
     [LoggerMessage(20015, LogLevel.Error, LogMessageTexts.ErrorDeletingUsers)]
     public static partial void UsersDeletingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20016, LogLevel.Error, "Error loading tokens")]
+    [LoggerMessage(20016, LogLevel.Error, LogMessageTexts.ErrorLoadingTokens)]
     public static partial void TokensLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20017, LogLevel.Error, "Error creating tokens")]
+    [LoggerMessage(20017, LogLevel.Error, LogMessageTexts.ErrorCreatingTokens)]
     public static partial void TokensCreatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20018, LogLevel.Error, "Error updating tokens")]
+    [LoggerMessage(20018, LogLevel.Error, LogMessageTexts.ErrorUpdatingTokens)]
     public static partial void TokensUpdatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20019, LogLevel.Error, "Error deleting tokens")]
+    [LoggerMessage(20019, LogLevel.Error, LogMessageTexts.ErrorDeletingTokens)]
     public static partial void TokensDeletingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20020, LogLevel.Error, "Error loading claims")]
+    [LoggerMessage(20020, LogLevel.Error, LogMessageTexts.ErrorLoadingClaims)]
     public static partial void ClaimsLoadingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20021, LogLevel.Error, "Error creating claims")]
+    [LoggerMessage(20021, LogLevel.Error, LogMessageTexts.ErrorCreatingClaims)]
     public static partial void ClaimsCreatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20022, LogLevel.Error, "Error updating claims")]
+    [LoggerMessage(20022, LogLevel.Error, LogMessageTexts.ErrorUpdatingClaims)]
     public static partial void ClaimsUpdatingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(20023, LogLevel.Error, "Error deleting claims")]
+    [LoggerMessage(20023, LogLevel.Error, LogMessageTexts.ErrorDeletingClaims)]
     public static partial void ClaimsDeletingError(this ILogger logger, Exception exception);
 
     [LoggerMessage(20024, LogLevel.Error, LogMessageTexts.ErrorLoadingScopes)]

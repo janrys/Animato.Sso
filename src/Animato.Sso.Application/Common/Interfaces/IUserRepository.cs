@@ -36,4 +36,5 @@ public interface IUserRepository
     Task RemoveUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken);
     Task ClearRoles(CancellationToken cancellationToken);
     Task Clear(CancellationToken cancellationToken);
+    Task<IEnumerable<UserClaim>> GetClaims(ClaimId id, int topCount, CancellationToken cancellationToken);
 }

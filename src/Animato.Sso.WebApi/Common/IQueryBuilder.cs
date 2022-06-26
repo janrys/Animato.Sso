@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.WebApi.Common;
+namespace Animato.Sso.WebApi.Common;
 
 public interface IQueryBuilder
 {
@@ -6,4 +6,5 @@ public interface IQueryBuilder
     ITokenQueryBuilder Token { get; }
     IApplicationQueryBuilder Application { get; }
     IScopeQueryBuilder Scope { get; }
+    IClaimQueryBuilder Claim { get; }
 }

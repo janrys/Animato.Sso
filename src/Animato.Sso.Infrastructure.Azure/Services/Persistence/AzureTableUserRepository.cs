@@ -21,7 +21,6 @@ public class AzureTableUserRepository : IUserRepository
     private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
     private readonly IDateTimeService dateTime;
-    private readonly IClaimRepository claimRepository;
     private readonly ILogger<AzureTableUserRepository> logger;
 
     public AzureTableUserRepository(AzureTableStorageDataContext dataContext

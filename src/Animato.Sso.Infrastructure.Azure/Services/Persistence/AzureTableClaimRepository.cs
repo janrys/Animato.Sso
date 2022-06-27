@@ -13,7 +13,6 @@ using Microsoft.Extensions.Logging;
 
 public class AzureTableClaimRepository : IClaimRepository
 {
-    private readonly IClaimRepository claimRepository;
     private Func<CancellationToken, Task> CheckIfTableExists => dataContext.ThrowExceptionIfTableNotExists;
     private readonly AzureTableStorageDataContext dataContext;
     private readonly IScopeRepository scopeRepository;

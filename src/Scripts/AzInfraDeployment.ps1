@@ -1,8 +1,8 @@
 # configuration
-$environment = "dev";
+$environment = "test";
 $systemPrefix = "sso";
 $resourceLocation = "West Europe";
-$skipLogin = $true;
+$skipLogin = $false;
 $cleanResources = $true;
 
 

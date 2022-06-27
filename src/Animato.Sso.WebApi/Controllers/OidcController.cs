@@ -84,7 +84,7 @@ public class OidcController : ApiControllerBase
 
             if (!string.IsNullOrEmpty(authorizationRequest.State))
             {
-                fragment += $"state={authorizationRequest.State}";
+                fragment += $"&state={authorizationRequest.State}";
             }
 
             redirectUri.SetFragment(fragment);

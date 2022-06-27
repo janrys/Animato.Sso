@@ -13,7 +13,9 @@ public interface IClaimRepository
     Task<IEnumerable<Claim>> GetAll(CancellationToken cancellationToken);
     Task<Claim> GetClaimByName(string name, CancellationToken cancellationToken);
     Task<Claim> GetBydId(ClaimId id, CancellationToken cancellationToken);
+    Task<IEnumerable<Claim>> GetBydId(CancellationToken cancellationToken, params ClaimId[] ids);
     Task Delete(string name, CancellationToken cancellationToken);
-    Task RemoveScopesByScope(ScopeId scopeId, CancellationToken cancellationToken);
-    Task RemoveScopesByClaim(ClaimId id, CancellationToken cancellationToken);
+    Task DeleteScopesByScope(ScopeId scopeId, CancellationToken cancellationToken);
+    Task DeleteScopesByClaim(ClaimId id, CancellationToken cancellationToken);
+    Task DeleteUserClaims(ClaimId id, CancellationToken cancellationToken);
 }

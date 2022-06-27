@@ -61,7 +61,7 @@ public class DeleteClaimCommand : IRequest<Unit>
                         );
                 }
 
-                await claimRepository.RemoveScopesByClaim(claim.Id, cancellationToken);
+                await claimRepository.DeleteScopesByClaim(claim.Id, cancellationToken);
                 await claimRepository.Delete(claim.Name, cancellationToken);
                 return Unit.Value;
             }

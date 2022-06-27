@@ -32,7 +32,7 @@ public class GetUsersQuery : IRequest<IEnumerable<User>>
         {
             try
             {
-                return await userRepository.GetUsers(cancellationToken);
+                return await userRepository.GetAll(cancellationToken);
             }
             catch (Exception exception)
             {

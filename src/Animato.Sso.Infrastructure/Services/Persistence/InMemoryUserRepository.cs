@@ -43,7 +43,7 @@ public class InMemoryUserRepository : IUserRepository
     public Task<User> Create(User user, CancellationToken cancellationToken)
         => Create(user, UserId.New(), cancellationToken);
 
-    public Task<User> Create(User user, UserId userId, CancellationToken cancellationToken)
+    public Task<User> Create(User user, UserId id, CancellationToken cancellationToken)
     {
         if (user is null)
         {
@@ -52,7 +52,7 @@ public class InMemoryUserRepository : IUserRepository
 
         try
         {
-            user.Id = userId;
+            user.Id = id;
             user.LastChanged = dateTime.UtcNow;
             users.Add(user);
             return Task.FromResult(user);
@@ -93,13 +93,13 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
-    public Task DeleteForce(UserId userId, CancellationToken cancellationToken)
+    public Task DeleteForce(UserId id, CancellationToken cancellationToken)
     {
         try
         {
-            userClaims.RemoveAll(a => a.UserId == userId);
-            tokens.RemoveAll(a => a.UserId == userId);
-            return Task.FromResult(users.RemoveAll(a => a.Id == userId));
+            userClaims.RemoveAll(a => a.UserId == id);
+            tokens.RemoveAll(a => a.UserId == id);
+            return Task.FromResult(users.RemoveAll(a => a.Id == id));
         }
         catch (Exception exception)
         {
@@ -108,15 +108,15 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
-    public async Task DeleteSoft(UserId userId, CancellationToken cancellationToken)
+    public async Task DeleteSoft(UserId id, CancellationToken cancellationToken)
     {
         try
         {
-            var user = await GetById(userId, cancellationToken);
+            var user = await GetById(id, cancellationToken);
 
             if (user == null)
             {
-                throw new NotFoundException(nameof(User), userId);
+                throw new NotFoundException(nameof(User), id);
             }
 
             if (user.IsDeleted)
@@ -135,11 +135,11 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
-    public Task<User> GetById(UserId userId, CancellationToken cancellationToken)
+    public Task<User> GetById(UserId id, CancellationToken cancellationToken)
     {
         try
         {
-            return Task.FromResult(users.FirstOrDefault(u => u.Id == userId));
+            return Task.FromResult(users.FirstOrDefault(u => u.Id == id));
         }
         catch (Exception exception)
         {
@@ -166,7 +166,7 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
-    public Task<IEnumerable<User>> GetUsers(CancellationToken cancellationToken)
+    public Task<IEnumerable<User>> GetAll(CancellationToken cancellationToken)
     {
         try
         {
@@ -193,11 +193,11 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
-    public Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId userId, CancellationToken cancellationToken)
+    public Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId id, CancellationToken cancellationToken)
     {
         try
         {
-            return Task.FromResult(userApplicationRoles.Where(r => r.UserId == userId)
+            return Task.FromResult(userApplicationRoles.Where(r => r.UserId == id)
                 .Join(applicationRoles, r => r.ApplicationRoleId, ar => ar.Id, (r, ar) => ar));
         }
         catch (Exception exception)
@@ -295,7 +295,7 @@ public class InMemoryUserRepository : IUserRepository
         return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<UserClaim>> GetClaims(ClaimId id, int topCount, CancellationToken cancellationToken)
+    public Task<IEnumerable<UserClaim>> GetClaims(ClaimId claimId, int topCount, CancellationToken cancellationToken)
     {
         if (topCount < 0)
         {
@@ -304,7 +304,7 @@ public class InMemoryUserRepository : IUserRepository
 
         try
         {
-            var storedUserClaims = userClaims.Where(c => c.ClaimId == id);
+            var storedUserClaims = userClaims.Where(c => c.ClaimId == claimId);
 
             if (!storedUserClaims.Any())
             {

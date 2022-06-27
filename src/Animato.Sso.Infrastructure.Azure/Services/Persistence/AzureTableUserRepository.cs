@@ -40,7 +40,7 @@ public class AzureTableUserRepository : IUserRepository
     public Task<User> Create(User user, CancellationToken cancellationToken)
         => Create(user, UserId.New(), cancellationToken);
 
-    public async Task<User> Create(User user, UserId userId, CancellationToken cancellationToken)
+    public async Task<User> Create(User user, UserId id, CancellationToken cancellationToken)
     {
         if (user is null)
         {
@@ -51,7 +51,7 @@ public class AzureTableUserRepository : IUserRepository
 
         try
         {
-            user.Id = userId;
+            user.Id = id;
             user.LastChanged = dateTime.UtcNow;
             var tableEntity = user.ToTableEntity();
             await TableUsers.AddEntityAsync(tableEntity, cancellationToken);
@@ -82,11 +82,11 @@ public class AzureTableUserRepository : IUserRepository
         }
     }
 
-    public async Task DeleteForce(UserId userId, CancellationToken cancellationToken)
+    public async Task DeleteForce(UserId id, CancellationToken cancellationToken)
     {
         await ThrowExceptionIfTableNotExists(cancellationToken);
 
-        var user = await GetById(userId, cancellationToken);
+        var user = await GetById(id, cancellationToken);
 
         if (user == null)
         {
@@ -107,13 +107,13 @@ public class AzureTableUserRepository : IUserRepository
         }
     }
 
-    public async Task DeleteSoft(UserId userId, CancellationToken cancellationToken)
+    public async Task DeleteSoft(UserId id, CancellationToken cancellationToken)
     {
-        var user = await GetById(userId, cancellationToken);
+        var user = await GetById(id, cancellationToken);
 
         if (user == null)
         {
-            throw new NotFoundException(nameof(User), userId);
+            throw new NotFoundException(nameof(User), id);
         }
 
         if (user.IsDeleted)
@@ -125,14 +125,14 @@ public class AzureTableUserRepository : IUserRepository
         await Update(user, cancellationToken);
     }
 
-    public async Task<User> GetById(UserId userId, CancellationToken cancellationToken)
+    public async Task<User> GetById(UserId id, CancellationToken cancellationToken)
     {
         await ThrowExceptionIfTableNotExists(cancellationToken);
 
         try
         {
             var results = new List<UserTableEntity>();
-            var queryResult = TableUsers.QueryAsync<UserTableEntity>(a => a.RowKey == userId.Value.ToString(), cancellationToken: cancellationToken);
+            var queryResult = TableUsers.QueryAsync<UserTableEntity>(a => a.RowKey == id.Value.ToString(), cancellationToken: cancellationToken);
 
             await queryResult.AsPages()
                 .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
@@ -148,7 +148,7 @@ public class AzureTableUserRepository : IUserRepository
                 return null;
             }
 
-            throw new DataAccessException($"Found duplicate users ({results.Count}) for id {userId.Value}");
+            throw new DataAccessException($"Found duplicate users ({results.Count}) for id {id.Value}");
         }
         catch (Exception exception)
         {
@@ -195,7 +195,7 @@ public class AzureTableUserRepository : IUserRepository
         }
     }
 
-    public async Task<IEnumerable<User>> GetUsers(CancellationToken cancellationToken)
+    public async Task<IEnumerable<User>> GetAll(CancellationToken cancellationToken)
     {
         await ThrowExceptionIfTableNotExists(cancellationToken);
 
@@ -258,7 +258,7 @@ public class AzureTableUserRepository : IUserRepository
         }
     }
 
-    public async Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId userId, CancellationToken cancellationToken)
+    public async Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId id, CancellationToken cancellationToken)
     {
         await ThrowExceptionIfTableNotExists(cancellationToken);
 
@@ -266,7 +266,7 @@ public class AzureTableUserRepository : IUserRepository
         {
             var userApplicationRoles = new List<UserApplicationRoleTableEntity>();
             var queryResult = TableUserApplicationRoles
-                .QueryAsync<UserApplicationRoleTableEntity>(r => r.RowKey == userId.Value.ToString()
+                .QueryAsync<UserApplicationRoleTableEntity>(r => r.RowKey == id.Value.ToString()
                 , cancellationToken: cancellationToken);
 
             await queryResult.AsPages()
@@ -406,7 +406,7 @@ public class AzureTableUserRepository : IUserRepository
         }
     }
 
-    public async Task<IEnumerable<UserClaim>> GetClaims(ClaimId id, int topCount, CancellationToken cancellationToken)
+    public async Task<IEnumerable<UserClaim>> GetClaims(ClaimId claimId, int topCount, CancellationToken cancellationToken)
     {
         if (topCount < 0)
         {
@@ -416,7 +416,7 @@ public class AzureTableUserRepository : IUserRepository
         try
         {
             var results = new List<UserClaimTableEntity>();
-            var queryResult = TableUsers.QueryAsync<UserClaimTableEntity>(a => a.RowKey == id.Value.ToString(), cancellationToken: cancellationToken);
+            var queryResult = TableUsers.QueryAsync<UserClaimTableEntity>(a => a.RowKey == claimId.Value.ToString(), cancellationToken: cancellationToken);
 
             await foreach (var page in queryResult.AsPages())
             {

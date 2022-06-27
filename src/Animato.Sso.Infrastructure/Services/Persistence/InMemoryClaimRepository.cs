@@ -46,7 +46,6 @@ public class InMemoryClaimRepository : IClaimRepository
 
         try
         {
-            cancellationToken.ThrowIfCancellationRequested();
             claims.Add(claim);
             return Task.FromResult(claim);
         }
@@ -101,6 +100,19 @@ public class InMemoryClaimRepository : IClaimRepository
         }
     }
 
+    public Task<IEnumerable<Claim>> GetBydId(CancellationToken cancellationToken, params ClaimId[] ids)
+    {
+        try
+        {
+            return Task.FromResult(claims.Where(x => ids.Any(id => x.Id == id)));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
     public Task<IEnumerable<Claim>> GetClaimsByScope(string scopeName, int topCount, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(scopeName))
@@ -130,9 +142,9 @@ public class InMemoryClaimRepository : IClaimRepository
     {
         try
         {
-            var scope = await GetBydId(claim.Id, cancellationToken);
+            var storedClaim = await GetBydId(claim.Id, cancellationToken);
 
-            if (scope == null)
+            if (storedClaim == null)
             {
                 throw new NotFoundException(nameof(Claim), claim.Id);
             }
@@ -165,8 +177,8 @@ public class InMemoryClaimRepository : IClaimRepository
                 return;
             }
 
-            await RemoveScopesByClaim(claim.Id, cancellationToken);
-            userClaims.RemoveAll(c => c.ClaimId == claim.Id);
+            await DeleteScopesByClaim(claim.Id, cancellationToken);
+            await DeleteUserClaims(claim.Id, cancellationToken);
             claims.RemoveAll(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
         catch (Exception exception)
@@ -176,7 +188,21 @@ public class InMemoryClaimRepository : IClaimRepository
         }
     }
 
-    public Task RemoveScopesByClaim(ClaimId id, CancellationToken cancellationToken)
+    public Task DeleteUserClaims(ClaimId id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            userClaims.RemoveAll(c => c.ClaimId == id);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsDeletingError(exception);
+            throw;
+        }
+    }
+
+    public Task DeleteScopesByClaim(ClaimId id, CancellationToken cancellationToken)
     {
         try
         {
@@ -189,7 +215,7 @@ public class InMemoryClaimRepository : IClaimRepository
         }
     }
 
-    public Task RemoveScopesByScope(ScopeId scopeId, CancellationToken cancellationToken)
+    public Task DeleteScopesByScope(ScopeId scopeId, CancellationToken cancellationToken)
     {
         try
         {
@@ -201,5 +227,4 @@ public class InMemoryClaimRepository : IClaimRepository
             throw;
         }
     }
-
 }

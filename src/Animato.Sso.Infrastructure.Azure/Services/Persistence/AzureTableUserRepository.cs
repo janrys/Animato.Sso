@@ -415,7 +415,7 @@ public class AzureTableUserRepository : IUserRepository
         try
         {
             var results = new List<UserClaimTableEntity>();
-            var queryResult = TableUsers.QueryAsync<UserClaimTableEntity>(a => a.RowKey == claimId.Value.ToString(), cancellationToken: cancellationToken);
+            var queryResult = TableUsers.QueryAsync<UserClaimTableEntity>(a => a.ClaimId == claimId.Value.ToString(), cancellationToken: cancellationToken);
 
             await foreach (var page in queryResult.AsPages())
             {

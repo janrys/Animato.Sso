@@ -4,6 +4,10 @@ using Animato.Sso.WebApi.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
+[ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+
 public class UserController : ApiControllerBase
 {
     private readonly ILogger<UserController> logger;
@@ -341,6 +345,170 @@ public class UserController : ApiControllerBase
         }
 
         var roles = await this.CommandForCurrentUser(cancellationToken).User.RemoveRole(userId, applicationRoleId);
+        return Ok(roles);
+    }
+
+    /// <summary>
+    /// Add claims to user
+    /// </summary>
+    /// <param name="id">User identifier</param>
+    /// <param name="claims">Claims with values</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>Added user claims</returns>
+    [HttpPost("{id}/claim", Name = nameof(AddUserClaims))]
+    public async Task<IActionResult> AddUserClaims(string id, [FromBody] AddUserClaimsModel claims, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(AddUserClaims));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        if (claims is null || claims.Claims is null || !claims.Claims.Any(c => !string.IsNullOrEmpty(c.Name)))
+        {
+            return BadRequest($"{nameof(claims)} must have a value");
+        }
+
+        Domain.Entities.UserId userId;
+        if (Guid.TryParse(id, out var parsedUserId))
+        {
+            userId = new Domain.Entities.UserId(parsedUserId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        var userClaims = await this.CommandForCurrentUser(cancellationToken).User.AddClaims(userId, claims);
+        return Ok(userClaims);
+    }
+
+    /// <summary>
+    /// Get user claims
+    /// </summary>
+    /// <param name="id">User id</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>User claims</returns>
+    [HttpGet("{id}/claim", Name = nameof(GetUserClaims))]
+    public async Task<IActionResult> GetUserClaims(string id, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(GetUserClaims));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        Domain.Entities.UserId userId;
+        if (Guid.TryParse(id, out var parsedUserId))
+        {
+            userId = new Domain.Entities.UserId(parsedUserId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        var claims = await this.QueryForCurrentUser(cancellationToken).User.GetClaims(userId);
+        return Ok(claims);
+    }
+
+    /// <summary>
+    /// Update user claim
+    /// </summary>
+    /// <param name="id">User identifier</param>
+    /// <param name="userClaimId">User claim id to update</param>
+    /// <param name="claim">Claim value to update</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>User claims</returns>
+    [HttpPut("{id}/claim/{userClaimId}", Name = nameof(UpdateUserClaim))]
+    public async Task<IActionResult> UpdateUserClaim(string id, string userClaimId, [FromBody] UpdateUserClaimModel claim, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(UpdateUserClaim));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(userClaimId))
+        {
+            return BadRequest($"{nameof(userClaimId)} must have a value");
+        }
+
+        if (claim is null || string.IsNullOrEmpty(claim.Value))
+        {
+            return BadRequest($"{nameof(claim)} must have a value");
+        }
+
+        Domain.Entities.UserId userId;
+        if (Guid.TryParse(id, out var parsedUserId))
+        {
+            userId = new Domain.Entities.UserId(parsedUserId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        Domain.Entities.UserClaimId validUserClaimId;
+        if (Guid.TryParse(userClaimId, out var parsedUserClaimId))
+        {
+            validUserClaimId = new Domain.Entities.UserClaimId(parsedUserClaimId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(userClaimId)} has a wrong format '{userClaimId}'");
+        }
+
+        var roles = await this.CommandForCurrentUser(cancellationToken).User.UpdateClaim(userId, validUserClaimId, claim);
+        return Ok(roles);
+    }
+
+    /// <summary>
+    /// Remove claims from user
+    /// </summary>
+    /// <param name="id">User identifier</param>
+    /// <param name="userClaimId">User claim id to remove</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>User claims</returns>
+    [HttpDelete("{id}/claim/{userClaimId}", Name = nameof(RemoveUserClaim))]
+    public async Task<IActionResult> RemoveUserClaim(string id, string userClaimId, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(RemoveUserClaim));
+
+        if (string.IsNullOrEmpty(id))
+        {
+            return BadRequest($"{nameof(id)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(userClaimId))
+        {
+            return BadRequest($"{nameof(userClaimId)} must have a value");
+        }
+
+        Domain.Entities.UserId userId;
+        if (Guid.TryParse(id, out var parsedUserId))
+        {
+            userId = new Domain.Entities.UserId(parsedUserId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(id)} has a wrong format '{id}'");
+        }
+
+        Domain.Entities.UserClaimId validUserClaimId;
+        if (Guid.TryParse(userClaimId, out var parsedUserClaimId))
+        {
+            validUserClaimId = new Domain.Entities.UserClaimId(parsedUserClaimId);
+        }
+        else
+        {
+            return BadRequest($"{nameof(userClaimId)} has a wrong format '{userClaimId}'");
+        }
+
+        var roles = await this.CommandForCurrentUser(cancellationToken).User.RemoveClaim(userId, validUserClaimId);
         return Ok(roles);
     }
 }

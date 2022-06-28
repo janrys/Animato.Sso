@@ -5,6 +5,10 @@ using Animato.Sso.WebApi.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
+[ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+
 public class ScopeController : ApiControllerBase
 {
     private readonly ILogger<ScopeController> logger;
@@ -100,6 +104,72 @@ public class ScopeController : ApiControllerBase
 
         await this.CommandForCurrentUser(cancellationToken).Scope.Delete(name);
         return Ok();
+    }
+
+    /// <summary>
+    /// Get claims assigned to scope
+    /// </summary>
+    /// <param name="name">Scope name</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>List of claims</returns>
+    [HttpGet("{name}/scope", Name = "GetScopeClaims")]
+    public async Task<IActionResult> GetScopeClaims(string name, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(GetScopeClaims));
+
+        if (string.IsNullOrEmpty(name))
+        {
+            return BadRequest($"{nameof(name)} must have a value");
+        }
+
+        return Ok(await this.QueryForCurrentUser(cancellationToken).Scope.GetClaims(name));
+    }
+
+    /// <summary>
+    /// Assign scope to claim
+    /// </summary>
+    /// <param name="name">Scope name</param>
+    /// <param name="claimName">Claim name</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>List of scope claims</returns>
+    [HttpPost("{name}/scope/{claim-name}", Name = nameof(AddScopeClaim))]
+    public async Task<IActionResult> AddScopeClaim(string name, [FromRoute(Name = "claim-name")] string claimName, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(AddScopeClaim));
+
+        if (string.IsNullOrEmpty(name))
+        {
+            return BadRequest($"{nameof(name)} must have a value");
+        }
+
+        if (string.IsNullOrEmpty(claimName))
+        {
+            return BadRequest($"{nameof(claimName)} must have a value");
+        }
+
+        var claims = await this.CommandForCurrentUser(cancellationToken).Scope.AddClaim(name, claimName);
+        return Ok(claims);
+    }
+
+    /// <summary>
+    /// Unassign scope from claim
+    /// </summary>
+    /// <param name="name">Scope name</param>
+    /// <param name="claimName">Claim name</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>List of scope claims</returns>
+    [HttpDelete("{name}/scope/{claim-name}", Name = nameof(DeleteScopeClaim))]
+    public async Task<IActionResult> DeleteScopeClaim(string name, [FromRoute(Name = "claim-name")] string claimName, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(DeleteScopeClaim));
+
+        if (string.IsNullOrEmpty(name))
+        {
+            return BadRequest($"{nameof(name)} must have a value");
+        }
+
+        var claims = await this.CommandForCurrentUser(cancellationToken).Scope.RemoveClaim(name, claimName);
+        return Ok(claims);
     }
 
 }

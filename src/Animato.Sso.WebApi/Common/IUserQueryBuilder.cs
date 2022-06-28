@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.WebApi.Common;
+namespace Animato.Sso.WebApi.Common;
 using Animato.Sso.Domain.Entities;
 
 public interface IUserQueryBuilder
@@ -7,4 +7,5 @@ public interface IUserQueryBuilder
     Task<User> GetByLogin(string login);
     Task<User> GetById(UserId id);
     Task<IEnumerable<ApplicationRole>> GetRoles(UserId userId);
+    Task<IEnumerable<UserClaim>> GetClaims(UserId userId);
 }

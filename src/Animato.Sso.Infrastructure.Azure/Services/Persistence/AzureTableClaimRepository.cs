@@ -121,7 +121,7 @@ public class AzureTableClaimRepository : IClaimRepository
         {
             var results = new List<UserClaimTableEntity>();
             var queryResult = TableUserClaims.QueryAsync<UserClaimTableEntity>(
-                s => s.RowKey == id.Value.ToString()
+                s => s.ClaimId == id.Value.ToString()
                 , cancellationToken: cancellationToken);
 
             await queryResult.AsPages()

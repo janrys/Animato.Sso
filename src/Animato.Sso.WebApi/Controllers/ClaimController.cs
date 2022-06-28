@@ -6,6 +6,10 @@ using Animato.Sso.WebApi.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
+[ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+
 public class ClaimController : ApiControllerBase
 {
     private readonly ILogger<ClaimController> logger;
@@ -56,7 +60,7 @@ public class ClaimController : ApiControllerBase
     }
 
     /// <summary>
-    /// Update scope
+    /// Update claim
     /// </summary>
     /// <param name="name">Current claim name</param>
     /// <param name="claim">Claim data to update</param>

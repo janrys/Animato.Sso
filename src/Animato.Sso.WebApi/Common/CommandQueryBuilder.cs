@@ -160,4 +160,11 @@ public class CommandQueryBuilder :
     => mediator.Send(new UpdateClaimCommand(oldName, claim, user), cancellationToken);
     Task IClaimCommandBuilder.Delete(string name)
     => mediator.Send(new DeleteClaimCommand(name, user), cancellationToken);
+    Task<IEnumerable<UserClaim>> IUserQueryBuilder.GetClaims(UserId userId) => throw new NotImplementedException();
+    Task<IEnumerable<UserClaim>> IUserCommandBuilder.RemoveClaim(UserId userId, UserClaimId validUserClaimId) => throw new NotImplementedException();
+    Task<IEnumerable<UserClaim>> IUserCommandBuilder.AddClaims(UserId userId, AddUserClaimsModel claims) => throw new NotImplementedException();
+    Task<IEnumerable<Domain.Entities.Claim>> IScopeQueryBuilder.GetClaims(string name) => throw new NotImplementedException();
+    Task<IEnumerable<Domain.Entities.Claim>> IScopeCommandBuilder.AddClaim(string name, string claimName) => throw new NotImplementedException();
+    Task<IEnumerable<Domain.Entities.Claim>> IScopeCommandBuilder.RemoveClaim(string name, string claimName) => throw new NotImplementedException();
+    Task<IEnumerable<UserClaim>> IUserCommandBuilder.UpdateClaim(UserId userId, UserClaimId validUserClaimId, UpdateUserClaimModel claim) => throw new NotImplementedException();
 }

@@ -1,4 +1,4 @@
-﻿namespace Animato.Sso.Application.Features.Users.DTOs;
+namespace Animato.Sso.Application.Features.Users.DTOs;
 
 public class AddUserRolesModel
 {

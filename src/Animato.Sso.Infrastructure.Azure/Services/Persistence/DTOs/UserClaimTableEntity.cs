@@ -9,14 +9,14 @@ public class UserClaimTableEntity : ITableEntity
     {
 
     }
-    public UserClaimTableEntity(UserId userId, ClaimId claimId) : this(userId.ToString(), claimId.ToString()) { }
-    public UserClaimTableEntity(string userId, string claimId)
+    public UserClaimTableEntity(UserId userId, UserClaimId id) : this(userId.ToString(), id.ToString()) { }
+    public UserClaimTableEntity(string userId, string id)
     {
         UserId = userId;
-        ClaimId = claimId;
+        Id = id;
     }
 
-    public string ClaimId { get => RowKey; set => RowKey = value; }
+    public string Id { get => RowKey; set => RowKey = value; }
     public string UserId { get => PartitionKey; private set => PartitionKey = value; }
 
     public string PartitionKey { get; set; }
@@ -24,6 +24,7 @@ public class UserClaimTableEntity : ITableEntity
     public DateTimeOffset? Timestamp { get; set; }
     public ETag ETag { get; set; }
 
+    public string ClaimId { get; set; }
     public string Value { get; set; }
 }
 
@@ -33,10 +34,16 @@ public static class UserClaimTableEntityExtensions
     public static UserClaim ToEntity(this UserClaimTableEntity tableEntity)
      => new()
      {
+         Id = new(Guid.Parse(tableEntity.Id)),
          UserId = new(Guid.Parse(tableEntity.UserId)),
-         ClaimId = new(Guid.Parse(tableEntity.ClaimId))
+         ClaimId = new(Guid.Parse(tableEntity.ClaimId)),
+         Value = tableEntity.Value
      };
 
     public static UserClaimTableEntity ToTableEntity(this UserClaim claim)
-     => new(claim.UserId, claim.ClaimId);
+     => new(claim.UserId, claim.Id)
+     {
+         ClaimId = claim.ClaimId.ToString(),
+         Value = claim.Value
+     };
 }

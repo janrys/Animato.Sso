@@ -5,6 +5,8 @@ using Animato.Sso.WebApi.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 public class ApplicationController : ApiControllerBase
 {
     private readonly ILogger<ApplicationController> logger;
@@ -17,6 +19,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="clientId"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>List of applications</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Domain.Entities.Application>))]
     [HttpGet(Name = "GetApplications")]
     public async Task<IActionResult> GetAll([FromQuery] string clientId, CancellationToken cancellationToken)
     {
@@ -37,6 +40,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="id">Application id</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Application</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Domain.Entities.Application))]
     [HttpGet("{id}", Name = "GetApplicationById")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {
@@ -91,6 +95,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="application"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Created application</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Domain.Entities.Application))]
     [HttpPost(Name = "CreateApplication")]
     public async Task<IActionResult> CreateApplication([FromBody] CreateApplicationModel application, CancellationToken cancellationToken)
     {
@@ -112,6 +117,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="application">Application changes</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Updated application</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Domain.Entities.Application))]
     [HttpPut("{id}", Name = "UpdateApplication")]
     public async Task<IActionResult> UpdateApplication(string id, [FromBody] CreateApplicationModel application, CancellationToken cancellationToken)
     {
@@ -147,6 +153,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="id">Application id to delete</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns></returns>
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [HttpDelete("{id}", Name = "DeleteApplication")]
     public async Task<IActionResult> DeleteApplication(string id, CancellationToken cancellationToken)
     {
@@ -177,6 +184,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="id">Application identifier</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>List of application roles</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Domain.Entities.ApplicationRole>))]
     [HttpGet("{id}/role", Name = "GetAllApplicationRoles")]
     public async Task<IActionResult> GetAllApplicationRoles(string id, CancellationToken cancellationToken)
     {
@@ -207,6 +215,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="id">Application role id</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Application role</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Domain.Entities.ApplicationRole))]
     [HttpGet("role/{id}", Name = "GetRoleById")]
     public async Task<IActionResult> GetRoleById(string id, CancellationToken cancellationToken)
     {
@@ -243,6 +252,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="roles">Application roles</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Created application roles</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Domain.Entities.ApplicationRole>))]
     [HttpPost("{id}/role", Name = "CreateApplicationRoles")]
     public async Task<IActionResult> CreateApplicationRoles(string id, [FromBody] CreateApplicationRolesModel roles, CancellationToken cancellationToken)
     {
@@ -284,6 +294,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="role">Application role changes</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Updated application role</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Domain.Entities.ApplicationRole))]
     [HttpPut("role/{id}", Name = "UpdateApplicationRole")]
     public async Task<IActionResult> UpdateApplicationRole(string id, [FromBody] CreateApplicationRoleModel role, CancellationToken cancellationToken)
     {
@@ -309,8 +320,8 @@ public class ApplicationController : ApiControllerBase
             return BadRequest($"{nameof(role)} must have a value");
         }
 
-        var createdApplication = await this.CommandForCurrentUser(cancellationToken).Application.UpdateRole(roleId, role);
-        return Ok(createdApplication);
+        var createdApplicationRole = await this.CommandForCurrentUser(cancellationToken).Application.UpdateRole(roleId, role);
+        return Ok(createdApplicationRole);
     }
 
     /// <summary>
@@ -319,6 +330,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="id">Application role id to delete</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns></returns>
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [HttpDelete("role/{id}", Name = "DeleteApplicationRole")]
     public async Task<IActionResult> DeleteApplicationRole(string id, CancellationToken cancellationToken)
     {
@@ -349,6 +361,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="id">Application identifier</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>List of scopes allowed for the application</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Domain.Entities.Scope>))]
     [HttpGet("{id}/scope", Name = "GetAllApplicationScopes")]
     public async Task<IActionResult> GetAllApplicationScopes(string id, CancellationToken cancellationToken)
     {
@@ -380,6 +393,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="scopes">List of scope names</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>All scopes allowed for application</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Domain.Entities.Scope>))]
     [HttpPost("{id}/scope", Name = "AddApplicationScopes")]
     public async Task<IActionResult> AddApplicationScopes(string id, [FromBody] CreateScopesModel scopes, CancellationToken cancellationToken)
     {
@@ -419,6 +433,7 @@ public class ApplicationController : ApiControllerBase
     /// <param name="scopes">List of scopes to remove from application</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>All scopes allowed for application</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Domain.Entities.Scope>))]
     [HttpDelete("{id}/scope", Name = "RemoveApplicationScopes")]
     public async Task<IActionResult> RemoveApplicationScopes(string id, [FromBody] CreateScopesModel scopes, CancellationToken cancellationToken)
     {

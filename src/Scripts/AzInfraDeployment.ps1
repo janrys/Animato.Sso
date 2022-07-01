@@ -1,5 +1,5 @@
 # configuration
-$environment = "test";
+$environment = "test2";
 $systemPrefix = "sso";
 $resourceLocation = "West Europe";
 $skipLogin = $false;

@@ -3,6 +3,7 @@ namespace Animato.Sso.Infrastructure.AzureStorage;
 using System.Reflection;
 using Animato.Sso.Application.Common;
 using Animato.Sso.Application.Common.Interfaces;
+using Animato.Sso.Infrastructure.AzureStorage.Services;
 using Animato.Sso.Infrastructure.AzureStorage.Services.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,8 @@ public static class DependencyInjection
         services.AddSingleton<ITokenRepository, AzureTableTokenRepository>();
         services.AddSingleton<IScopeRepository, AzureTableScopeRepository>();
         services.AddSingleton<IClaimRepository, AzureTableClaimRepository>();
+
+        services.AddHealthChecks().AddCheck<TableStorageHealthCheck>(TableStorageHealthCheck.Name);
         return services;
     }
 }

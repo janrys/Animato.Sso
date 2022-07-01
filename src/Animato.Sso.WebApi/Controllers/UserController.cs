@@ -4,7 +4,6 @@ using Animato.Sso.WebApi.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-[ProducesResponseType(StatusCodes.Status200OK)]
 [ProducesResponseType(StatusCodes.Status400BadRequest)]
 [ProducesResponseType(StatusCodes.Status500InternalServerError)]
 
@@ -20,6 +19,7 @@ public class UserController : ApiControllerBase
     /// <param name="login">User login</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>List of users</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Domain.Entities.User>))]
     [HttpGet(Name = "GetUsers")]
     public async Task<IActionResult> GetAll([FromQuery] string login, CancellationToken cancellationToken)
     {
@@ -40,6 +40,7 @@ public class UserController : ApiControllerBase
     /// <param name="id">User id</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>User</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Domain.Entities.User))]
     [HttpGet("{id}", Name = "GetUserById")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {
@@ -95,6 +96,7 @@ public class UserController : ApiControllerBase
     /// <param name="user"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Created user</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Domain.Entities.User))]
     [HttpPost(Name = "CreateUser")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserModel user, CancellationToken cancellationToken)
     {
@@ -116,6 +118,7 @@ public class UserController : ApiControllerBase
     /// <param name="user">User changes</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Updated user</returns>
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Domain.Entities.User))]
     [HttpPut("{id}", Name = "UpdateUser")]
     public async Task<IActionResult> UpdateUser(string id, [FromBody] CreateUserModel user, CancellationToken cancellationToken)
     {
@@ -151,6 +154,7 @@ public class UserController : ApiControllerBase
     /// <param name="id">User id to delete</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns></returns>
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [HttpDelete("{id}", Name = "DeleteUser")]
     public async Task<IActionResult> DeleteUser(string id, CancellationToken cancellationToken)
     {

@@ -168,6 +168,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddWebApi(this IServiceCollection services, IWebHostEnvironment environment)
     {
+        services.AddCustomHealtChecks();
         services.AddHttpContextAccessor();
         services.AddSingleton<ICurrentUserService, HttpContextCurrentUserService>();
         services.AddSingleton<IMetadataService, MetadataService>();
@@ -176,8 +177,6 @@ public static class ServiceCollectionExtensions
         {
             services.AddDatabaseDeveloperPageExceptionFilter();
         }
-
-        services.AddHealthChecks();
 
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
@@ -206,6 +205,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddHostedService<DataSeedService>();
         services.AddHostedService<PurgeExpiredCodesService>();
+        return services;
+    }
+
+    public static IServiceCollection AddCustomHealtChecks(this IServiceCollection services)
+    {
+        services.AddHealthChecks();
         return services;
     }
 

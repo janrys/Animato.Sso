@@ -30,7 +30,7 @@ try
 
     app.UseCustomLogging();
     app.UseCustomProblemDetails();
-    app.UseHealthChecks("/health");
+    app.UseHealthChecks("/api/health");
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();

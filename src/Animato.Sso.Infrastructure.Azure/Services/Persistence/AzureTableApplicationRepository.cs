@@ -15,8 +15,6 @@ using Microsoft.Extensions.Logging;
 public class AzureTableApplicationRepository : IApplicationRepository
 {
     private TableClient TableApplications => dataContext.Applications;
-    private TableClient TableApplicationRoles => dataContext.ApplicationRoles;
-    private TableClient TableUserApplicationRoles => dataContext.UserApplicationRoles;
 
     private TableClient TableApplicationScopes => dataContext.ApplicationScopes;
 
@@ -126,59 +124,6 @@ public class AzureTableApplicationRepository : IApplicationRepository
         }
     }
 
-    public async Task<IEnumerable<ApplicationRole>> GetRoles(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
-    {
-        await ThrowExceptionIfTableNotExists(cancellationToken);
-
-        try
-        {
-            var queryResult = TableApplicationRoles.QueryAsync<ApplicationRoleTableEntity>(a => a.PartitionKey == applicationId.ToString(), cancellationToken: cancellationToken);
-            var results = new List<ApplicationRoleTableEntity>();
-
-            await queryResult.AsPages()
-                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
-                .ConfigureAwait(false);
-
-            return results.Select(r => r.ToEntity());
-        }
-        catch (Exception exception)
-        {
-            logger.ApplicationRolesLoadingError(exception);
-            throw;
-        }
-    }
-
-    public async Task<IEnumerable<ApplicationRole>> GetUserRoles(Domain.Entities.ApplicationId applicationId, UserId userId, CancellationToken cancellationToken)
-    {
-        var applicationRoles = await GetRoles(applicationId, cancellationToken);
-        var userRoles = await GetUserApplicationRoles(userId, cancellationToken);
-
-        return applicationRoles
-            .Join(userRoles
-            .Where(uar => uar.UserId == userId), ar => ar.Id, uar => uar.ApplicationRoleId, (ar, uar) => ar);
-    }
-
-    private async Task<IEnumerable<UserApplicationRole>> GetUserApplicationRoles(UserId userId, CancellationToken cancellationToken)
-    {
-        await ThrowExceptionIfTableNotExists(cancellationToken);
-
-        try
-        {
-            var queryResult = TableUserApplicationRoles.QueryAsync<UserApplicationRoleTableEntity>(a => a.RowKey == userId.ToString(), cancellationToken: cancellationToken);
-            var results = new List<UserApplicationRoleTableEntity>();
-
-            await queryResult.AsPages()
-                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
-                .ConfigureAwait(false);
-
-            return results.Select(r => r.ToEntity());
-        }
-        catch (Exception exception)
-        {
-            logger.ApplicationRolesLoadingError(exception);
-            throw;
-        }
-    }
 
     public async Task<Application> Create(Application application, CancellationToken cancellationToken)
     {

@@ -193,20 +193,6 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
-    public Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return Task.FromResult(userApplicationRoles.Where(r => r.UserId == id)
-                .Join(applicationRoles, r => r.ApplicationRoleId, ar => ar.Id, (r, ar) => ar));
-        }
-        catch (Exception exception)
-        {
-            logger.ApplicationRolesLoadingError(exception);
-            throw;
-        }
-    }
-
     public async Task AddUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
         try
@@ -319,4 +305,10 @@ public class InMemoryUserRepository : IUserRepository
             throw;
         }
     }
+
+    public Task<IEnumerable<UserClaim>> GetClaims(UserId id, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task RemoveUserClaim(UserClaimId userClaimId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task AddUserClaims(UserId id, CancellationToken cancellationToken, params UserClaim[] userClaims) => throw new NotImplementedException();
+    public Task<UserClaim> GetClaim(UserClaimId userClaimId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task<UserClaim> UpdateUserClaim(UserClaim userClaim, CancellationToken cancellationToken) => throw new NotImplementedException();
 }

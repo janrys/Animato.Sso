@@ -24,6 +24,7 @@ public class GetTokenCommand : IRequest<TokenResult>
         private readonly OidcOptions oidcOptions;
         private readonly IUserRepository userRepository;
         private readonly IApplicationRepository applicationRepository;
+        private readonly IApplicationRoleRepository applicationRoleRepository;
         private readonly IAuthorizationCodeRepository authorizationCodeRepository;
         private readonly ITokenRepository tokenRepository;
         private readonly IDateTimeService dateTime;
@@ -34,6 +35,7 @@ public class GetTokenCommand : IRequest<TokenResult>
         public GetTokenCommandHandler(OidcOptions oidcOptions
             , IUserRepository userRepository
             , IApplicationRepository applicationRepository
+            , IApplicationRoleRepository applicationRoleRepository
             , IAuthorizationCodeRepository authorizationCodeRepository
             , ITokenRepository tokenRepository
             , IDateTimeService dateTime
@@ -42,6 +44,7 @@ public class GetTokenCommand : IRequest<TokenResult>
             this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
+            this.applicationRoleRepository = applicationRoleRepository ?? throw new ArgumentNullException(nameof(applicationRoleRepository));
             this.authorizationCodeRepository = authorizationCodeRepository ?? throw new ArgumentNullException(nameof(authorizationCodeRepository));
             this.tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
             this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
@@ -137,7 +140,7 @@ public class GetTokenCommand : IRequest<TokenResult>
                     throw new ForbiddenAccessException("", $"User {userId} is blocked");
                 }
 
-                var userRoles = await applicationRepository.GetUserRoles(application.Id, userId, cancellationToken);
+                var userRoles = await applicationRoleRepository.GetByApplicationAndUser(application.Id, userId, cancellationToken);
                 if (!userRoles.Any())
                 {
                     throw new ForbiddenAccessException("", $"No permission for application {application.Name} ({application.Code})");

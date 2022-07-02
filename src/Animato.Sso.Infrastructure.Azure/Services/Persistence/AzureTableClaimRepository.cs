@@ -307,7 +307,7 @@ public class AzureTableClaimRepository : IClaimRepository
         }
     }
 
-    public async Task<IEnumerable<Claim>> GetClaimsByScope(string scopeName, int topCount, CancellationToken cancellationToken)
+    public async Task<IEnumerable<Claim>> GetByScope(string scopeName, int topCount, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(scopeName))
         {
@@ -369,4 +369,11 @@ public class AzureTableClaimRepository : IClaimRepository
             throw;
         }
     }
+
+    public Task<IEnumerable<Claim>> GetByName(CancellationToken cancellationToken, params string[] strings) => throw new NotImplementedException();
+    public Task<IEnumerable<Claim>> GetByScope(string scopeName, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task<IEnumerable<Claim>> GetByScope(ScopeId scopeId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task<ClaimScope> GetClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task<ClaimScope> AddClaimScope(ClaimScope claimScope, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task RemoveClaimScope(ScopeId id1, ClaimId id2, CancellationToken cancellationToken) => throw new NotImplementedException();
 }

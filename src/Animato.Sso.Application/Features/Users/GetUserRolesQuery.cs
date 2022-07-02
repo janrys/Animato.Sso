@@ -29,12 +29,14 @@ public class GetUserRolesQuery : IRequest<IEnumerable<ApplicationRole>>
 
     public class GetUserRolesQueryHandler : IRequestHandler<GetUserRolesQuery, IEnumerable<ApplicationRole>>
     {
-        private readonly IUserRepository userRepository;
+        private readonly IApplicationRoleRepository applicationRoleRepository;
         private readonly ILogger<GetUserRolesQueryHandler> logger;
 
-        public GetUserRolesQueryHandler(IUserRepository userRepository, ILogger<GetUserRolesQueryHandler> logger)
+        public GetUserRolesQueryHandler(IUserRepository userRepository
+            , IApplicationRoleRepository applicationRoleRepository
+            , ILogger<GetUserRolesQueryHandler> logger)
         {
-            this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            this.applicationRoleRepository = applicationRoleRepository;
             this.logger = logger;
         }
 
@@ -42,7 +44,7 @@ public class GetUserRolesQuery : IRequest<IEnumerable<ApplicationRole>>
         {
             try
             {
-                return await userRepository.GetUserRoles(request.Id, cancellationToken);
+                return await applicationRoleRepository.GetByUser(request.Id, cancellationToken);
             }
             catch (Exception exception)
             {

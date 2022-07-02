@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 public class InMemoryApplicationRoleRepository : IApplicationRoleRepository
 {
     private readonly List<ApplicationRole> applicationRoles;
+    private readonly List<UserApplicationRole> userApplicationRoles;
     private readonly ILogger<InMemoryApplicationRoleRepository> logger;
 
     public InMemoryApplicationRoleRepository(InMemoryDataContext dataContext, ILogger<InMemoryApplicationRoleRepository> logger)
@@ -23,14 +24,43 @@ public class InMemoryApplicationRoleRepository : IApplicationRoleRepository
         }
 
         applicationRoles = dataContext.ApplicationRoles;
+        userApplicationRoles = dataContext.UserApplicationRoles;
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public Task<IEnumerable<ApplicationRole>> GetByApplicationId(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
+    public Task<IEnumerable<ApplicationRole>> GetByApplication(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
     {
         try
         {
             return Task.FromResult(applicationRoles.Where(u => u.ApplicationId == applicationId));
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesLoadingError(exception);
+            throw;
+        }
+    }
+
+    public Task<IEnumerable<ApplicationRole>> GetByApplicationAndUser(Domain.Entities.ApplicationId applicationId, UserId userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(applicationRoles.Where(r => r.ApplicationId == applicationId)
+                .Join(userApplicationRoles
+                .Where(uar => uar.UserId == userId), ar => ar.Id, uar => uar.ApplicationRoleId, (ar, uar) => ar));
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesLoadingError(exception);
+            throw;
+        }
+    }
+    public Task<IEnumerable<ApplicationRole>> GetByUser(UserId id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(userApplicationRoles.Where(r => r.UserId == id)
+                .Join(applicationRoles, r => r.ApplicationRoleId, ar => ar.Id, (r, ar) => ar));
         }
         catch (Exception exception)
         {

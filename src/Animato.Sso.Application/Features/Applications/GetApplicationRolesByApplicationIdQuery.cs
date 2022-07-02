@@ -43,7 +43,7 @@ public class GetApplicationRolesByApplicationIdQuery : IRequest<IEnumerable<Appl
         {
             try
             {
-                return await roleRepository.GetByApplicationId(request.ApplicationId, cancellationToken);
+                return await roleRepository.GetByApplication(request.ApplicationId, cancellationToken);
             }
             catch (Exception exception)
             {

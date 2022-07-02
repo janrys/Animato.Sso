@@ -72,34 +72,6 @@ public class InMemoryApplicationRepository : IApplicationRepository
         }
     }
 
-    public Task<IEnumerable<ApplicationRole>> GetRoles(Domain.Entities.ApplicationId applicationId, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return Task.FromResult(applicationRoles.Where(r => r.ApplicationId == applicationId));
-        }
-        catch (Exception exception)
-        {
-            logger.ApplicationRolesLoadingError(exception);
-            throw;
-        }
-    }
-
-    public Task<IEnumerable<ApplicationRole>> GetUserRoles(Domain.Entities.ApplicationId applicationId, UserId userId, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return Task.FromResult(applicationRoles.Where(r => r.ApplicationId == applicationId)
-                .Join(userApplicationRoles
-                .Where(uar => uar.UserId == userId), ar => ar.Id, uar => uar.ApplicationRoleId, (ar, uar) => ar));
-        }
-        catch (Exception exception)
-        {
-            logger.ApplicationRolesLoadingError(exception);
-            throw;
-        }
-    }
-
     public Task<Application> Create(Application application, CancellationToken cancellationToken)
     {
         try

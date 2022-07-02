@@ -64,7 +64,7 @@ public class DeleteScopeCommand : IRequest<Unit>
                     return Unit.Value;
                 }
 
-                var claims = await claimRepository.GetClaimsByScope(scope.Name, 1, cancellationToken);
+                var claims = await claimRepository.GetByScope(scope.Name, 1, cancellationToken);
                 if (claims.Any())
                 {
                     throw new Exceptions.ValidationException(

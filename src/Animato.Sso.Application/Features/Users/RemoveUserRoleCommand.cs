@@ -37,16 +37,16 @@ public class RemoveUserRoleCommand : IRequest<IEnumerable<ApplicationRole>>
     public class RemoveUserRoleCommandHandler : IRequestHandler<RemoveUserRoleCommand, IEnumerable<ApplicationRole>>
     {
         private readonly IUserRepository userRepository;
-        private readonly IApplicationRoleRepository roleRepository;
+        private readonly IApplicationRoleRepository applicationRoleRepository;
         private readonly ILogger<RemoveUserRoleCommandHandler> logger;
         private const string ERROR_UPDATING_USER = "Error updating user";
 
         public RemoveUserRoleCommandHandler(IUserRepository userRepository
-            , IApplicationRoleRepository roleRepository
+            , IApplicationRoleRepository applicationRoleRepository
             , ILogger<RemoveUserRoleCommandHandler> logger)
         {
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-            this.roleRepository = roleRepository ?? throw new ArgumentNullException(nameof(roleRepository));
+            this.applicationRoleRepository = applicationRoleRepository ?? throw new ArgumentNullException(nameof(applicationRoleRepository));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -58,11 +58,11 @@ public class RemoveUserRoleCommand : IRequest<IEnumerable<ApplicationRole>>
 
                 if (user is null)
                 {
-                    throw new NotFoundException(nameof(Application), request.UserId);
+                    throw new NotFoundException(nameof(User), request.UserId);
                 }
 
                 var roles = new List<ApplicationRole>();
-                roles.AddRange(await userRepository.GetUserRoles(request.UserId, cancellationToken));
+                roles.AddRange(await applicationRoleRepository.GetByUser(request.UserId, cancellationToken));
 
                 if (roles.Any(r => r.Id == request.RoleId))
                 {

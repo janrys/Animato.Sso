@@ -38,16 +38,16 @@ public class AddUserRolesCommand : IRequest<IEnumerable<ApplicationRole>>
     public class AddUserRoleCommandHandler : IRequestHandler<AddUserRolesCommand, IEnumerable<ApplicationRole>>
     {
         private readonly IUserRepository userRepository;
-        private readonly IApplicationRoleRepository roleRepository;
+        private readonly IApplicationRoleRepository applicationRoleRepository;
         private readonly ILogger<AddUserRoleCommandHandler> logger;
         private const string ERROR_UPDATING_USER = "Error updating user";
 
         public AddUserRoleCommandHandler(IUserRepository userRepository
-            , IApplicationRoleRepository roleRepository
+            , IApplicationRoleRepository applicationRoleRepository
             , ILogger<AddUserRoleCommandHandler> logger)
         {
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-            this.roleRepository = roleRepository ?? throw new ArgumentNullException(nameof(roleRepository));
+            this.applicationRoleRepository = applicationRoleRepository ?? throw new ArgumentNullException(nameof(applicationRoleRepository));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -62,7 +62,7 @@ public class AddUserRolesCommand : IRequest<IEnumerable<ApplicationRole>>
                     throw new NotFoundException(nameof(Application), request.UserId);
                 }
 
-                var applicationRoles = await roleRepository.GetByIds(cancellationToken, request.RoleIds);
+                var applicationRoles = await applicationRoleRepository.GetByIds(cancellationToken, request.RoleIds);
                 var missingApplicationRoleIds = request.RoleIds.Where(r => !applicationRoles.Any(a => a.Id == r));
 
                 if (missingApplicationRoleIds.Any())
@@ -70,7 +70,7 @@ public class AddUserRolesCommand : IRequest<IEnumerable<ApplicationRole>>
                     throw new NotFoundException(nameof(ApplicationRole), string.Join(", ", missingApplicationRoleIds.Select(r => r.Value)));
                 }
 
-                var userRoles = await userRepository.GetUserRoles(request.UserId, cancellationToken);
+                var userRoles = await applicationRoleRepository.GetByUser(request.UserId, cancellationToken);
                 applicationRoles = applicationRoles.Where(a => !userRoles.Any(r => r.Id == a.Id));
 
                 if (applicationRoles.Any())

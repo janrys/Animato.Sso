@@ -30,11 +30,15 @@ public interface IUserRepository
     Task<User> Create(User user, UserId id, CancellationToken cancellationToken);
     Task<User> Update(User user, CancellationToken cancellationToken);
     Task<IEnumerable<User>> GetUserByRole(ApplicationRoleId roleId, CancellationToken cancellationToken);
-    Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId id, CancellationToken cancellationToken);
     Task AddUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken);
     Task AddUserRoles(UserId userId, CancellationToken cancellationToken, params ApplicationRoleId[] roleIds);
     Task RemoveUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken);
     Task ClearRoles(CancellationToken cancellationToken);
     Task Clear(CancellationToken cancellationToken);
     Task<IEnumerable<UserClaim>> GetClaims(ClaimId claimId, int topCount, CancellationToken cancellationToken);
+    Task<IEnumerable<UserClaim>> GetClaims(UserId id, CancellationToken cancellationToken);
+    Task RemoveUserClaim(UserClaimId userClaimId, CancellationToken cancellationToken);
+    Task AddUserClaims(UserId id, CancellationToken cancellationToken, params UserClaim[] userClaims);
+    Task<UserClaim> GetClaim(UserClaimId userClaimId, CancellationToken cancellationToken);
+    Task<UserClaim> UpdateUserClaim(UserClaim userClaim, CancellationToken cancellationToken);
 }

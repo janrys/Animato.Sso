@@ -8,8 +8,6 @@ public interface IApplicationRepository
 {
     Task<IEnumerable<Application>> GetAll(CancellationToken cancellationToken);
     Task<Application> GetByCode(string code, CancellationToken cancellationToken);
-    Task<IEnumerable<ApplicationRole>> GetRoles(ApplicationId applicationId, CancellationToken cancellationToken);
-    Task<IEnumerable<ApplicationRole>> GetUserRoles(ApplicationId applicationId, UserId userId, CancellationToken cancellationToken);
     Task<Application> GetById(ApplicationId applicationId, CancellationToken cancellationToken);
     Task<Application> Create(Application application, CancellationToken cancellationToken);
     Task<Application> Update(Application application, CancellationToken cancellationToken);

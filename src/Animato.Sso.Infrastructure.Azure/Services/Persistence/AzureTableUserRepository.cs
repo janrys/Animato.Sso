@@ -257,48 +257,6 @@ public class AzureTableUserRepository : IUserRepository
         }
     }
 
-    public async Task<IEnumerable<ApplicationRole>> GetUserRoles(UserId id, CancellationToken cancellationToken)
-    {
-        await ThrowExceptionIfTableNotExists(cancellationToken);
-
-        try
-        {
-            var userApplicationRoles = new List<UserApplicationRoleTableEntity>();
-            var queryResult = TableUserApplicationRoles
-                .QueryAsync<UserApplicationRoleTableEntity>(r => r.RowKey == id.Value.ToString()
-                , cancellationToken: cancellationToken);
-
-            await queryResult.AsPages()
-                .ForEachAsync(page => userApplicationRoles.AddRange(page.Values), cancellationToken)
-                .ConfigureAwait(false);
-
-            if (userApplicationRoles.Count == 0)
-            {
-                return Enumerable.Empty<ApplicationRole>();
-            }
-
-            var applicationRoles = new List<ApplicationRoleTableEntity>();
-
-            foreach (var userRole in userApplicationRoles)
-            {
-                var queryResultApplicationRoles = TableApplicationRoles
-                .QueryAsync<ApplicationRoleTableEntity>(r => r.RowKey == userRole.ApplicationRoleId
-                , cancellationToken: cancellationToken);
-
-                await queryResultApplicationRoles.AsPages()
-                    .ForEachAsync(page => applicationRoles.AddRange(page.Values), cancellationToken)
-                    .ConfigureAwait(false);
-            }
-
-            return applicationRoles.Select(r => r.ToEntity());
-        }
-        catch (Exception exception)
-        {
-            logger.ApplicationRolesLoadingError(exception);
-            throw;
-        }
-    }
-
     public async Task AddUserRole(UserId userId, ApplicationRoleId roleId, CancellationToken cancellationToken)
     {
         await ThrowExceptionIfTableNotExists(cancellationToken);
@@ -435,4 +393,10 @@ public class AzureTableUserRepository : IUserRepository
             throw;
         }
     }
+
+    public Task<IEnumerable<UserClaim>> GetClaims(UserId id, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task RemoveUserClaim(UserClaimId userClaimId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task AddUserClaims(UserId id, CancellationToken cancellationToken, params UserClaim[] userClaims) => throw new NotImplementedException();
+    public Task<UserClaim> GetClaim(UserClaimId userClaimId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task<UserClaim> UpdateUserClaim(UserClaim userClaim, CancellationToken cancellationToken) => throw new NotImplementedException();
 }

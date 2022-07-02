@@ -53,7 +53,7 @@ public class DeleteApplicationCommand : IRequest<Unit>
                     return Unit.Value;
                 }
 
-                var roles = await roleRepository.GetByApplicationId(request.ApplicationId, cancellationToken);
+                var roles = await roleRepository.GetByApplication(request.ApplicationId, cancellationToken);
                 if (roles != null && roles.Any())
                 {
                     throw new Exceptions.ValidationException(

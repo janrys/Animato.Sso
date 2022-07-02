@@ -30,6 +30,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
         private readonly IUserRepository userRepository;
         private readonly IApplicationRepository applicationRepository;
         private readonly IAuthorizationCodeRepository authorizationCodeRepository;
+        private readonly IApplicationRoleRepository applicationRoleRepository;
         private readonly ITokenRepository tokenRepository;
         private readonly ITokenFactory tokenFactory;
         private readonly IDateTimeService dateTime;
@@ -39,6 +40,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
         public AuthorizeUserCommandHandler(IUserRepository userRepository
             , IApplicationRepository applicationRepository
             , IAuthorizationCodeRepository authorizationCodeRepository
+            , IApplicationRoleRepository applicationRoleRepository
             , ITokenRepository tokenRepository
             , ITokenFactory tokenFactory
             , IDateTimeService dateTime
@@ -47,6 +49,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
             this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             this.applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
             this.authorizationCodeRepository = authorizationCodeRepository ?? throw new ArgumentNullException(nameof(authorizationCodeRepository));
+            this.applicationRoleRepository = applicationRoleRepository ?? throw new ArgumentNullException(nameof(applicationRoleRepository));
             this.tokenRepository = tokenRepository ?? throw new ArgumentNullException(nameof(tokenRepository));
             this.tokenFactory = tokenFactory ?? throw new ArgumentNullException(nameof(tokenFactory));
             this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
@@ -79,7 +82,7 @@ public class AuthorizeUserCommand : IRequest<AuthorizationResult>
                     throw new ForbiddenAccessException(user.Login, $"Redirect {request.AuthorizationRequest.RedirectUri} is not allowed for application {application.Name} ({application.Code})");
                 }
 
-                var userRoles = await applicationRepository.GetUserRoles(application.Id, user.Id, cancellationToken);
+                var userRoles = await applicationRoleRepository.GetByApplicationAndUser(application.Id, user.Id, cancellationToken);
                 if (!userRoles.Any())
                 {
                     throw new ForbiddenAccessException(user.Login, $"No permission for application {application.Name} ({application.Code})");

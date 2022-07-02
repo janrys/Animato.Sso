@@ -113,24 +113,32 @@ public class InMemoryClaimRepository : IClaimRepository
         }
     }
 
-    public Task<IEnumerable<Claim>> GetClaimsByScope(string scopeName, int topCount, CancellationToken cancellationToken)
+    private Task<IEnumerable<Claim>> GetByScopeInternal(string scopeName, int? topCount, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(scopeName))
         {
             throw new ArgumentException($"'{nameof(scopeName)}' cannot be null or empty.", nameof(scopeName));
         }
 
-        if (topCount <= 0)
+        if (topCount.HasValue && topCount.Value <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(topCount), "Must be greater than 0");
         }
 
         try
         {
-            return Task.FromResult(scopes.Where(s => s.Name.Equals(scopeName, StringComparison.OrdinalIgnoreCase))
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var result = scopes.Where(s => s.Name.Equals(scopeName, StringComparison.OrdinalIgnoreCase))
                 .Join(claimScopes, scope => scope.Id, cs => cs.ScopeId, (scope, cs) => cs)
-                .Join(claims, cs => cs.ClaimId, c => c.Id, (cs, c) => c)
-                .Take(topCount));
+                .Join(claims, cs => cs.ClaimId, c => c.Id, (cs, c) => c);
+
+            if (topCount.HasValue)
+            {
+                result = result.Take(topCount.Value);
+            }
+
+            return Task.FromResult(result);
         }
         catch (Exception exception)
         {
@@ -138,6 +146,65 @@ public class InMemoryClaimRepository : IClaimRepository
             throw;
         }
     }
+
+    public Task<IEnumerable<Claim>> GetByScope(string scopeName, CancellationToken cancellationToken)
+        => GetByScopeInternal(scopeName, null, cancellationToken);
+
+    public Task<IEnumerable<Claim>> GetByScope(string scopeName, int topCount, CancellationToken cancellationToken)
+        => GetByScopeInternal(scopeName, topCount, cancellationToken);
+
+    public Task<IEnumerable<Claim>> GetByScope(ScopeId scopeId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var result = scopes.Where(s => s.Id == scopeId)
+                .Join(claimScopes, scope => scope.Id, cs => cs.ScopeId, (scope, cs) => cs)
+                .Join(claims, cs => cs.ClaimId, c => c.Id, (cs, c) => c);
+
+            return Task.FromResult(result);
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+
+    public Task<IEnumerable<Claim>> GetByName(CancellationToken cancellationToken, params string[] names)
+    {
+        if (names is null || !names.Any(n => !string.IsNullOrEmpty(n)))
+        {
+            return Task.FromResult(Enumerable.Empty<Claim>());
+        }
+
+        try
+        {
+            return Task.FromResult(claims.Where(c => names.Any(n => n.Equals(c.Name, StringComparison.OrdinalIgnoreCase))));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+    public Task<ClaimScope> GetClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(claimScopes.FirstOrDefault(c => c.ClaimId == claimId && c.ScopeId == scopeId));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+
     public async Task<Claim> Update(Claim claim, CancellationToken cancellationToken)
     {
         try
@@ -224,6 +291,49 @@ public class InMemoryClaimRepository : IClaimRepository
         catch (Exception exception)
         {
             logger.ClaimsDeletingError(exception);
+            throw;
+        }
+    }
+
+    public async Task<ClaimScope> AddClaimScope(ClaimScope claimScope, CancellationToken cancellationToken)
+    {
+        if (claimScope is null)
+        {
+            throw new ArgumentNullException(nameof(claimScope));
+        }
+
+        try
+        {
+            var storedClaimScope = await GetClaimScope(claimScope.ScopeId, claimScope.ClaimId, cancellationToken);
+
+            if (storedClaimScope is not null)
+            {
+                throw new ValidationException(
+                     ValidationException.CreateFailure("ClaimScope"
+                     , $"Cannot add new claim scopes, because already exists claim id {storedClaimScope.ClaimId.Value} and scope id {storedClaimScope.ScopeId.Value} ")
+                     );
+            }
+
+            claimScopes.Add(claimScope);
+            return claimScope;
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesCreatingError(exception);
+            throw;
+        }
+    }
+
+    public Task RemoveClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            claimScopes.RemoveAll(c => c.ClaimId == claimId && c.ScopeId == scopeId);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesCreatingError(exception);
             throw;
         }
     }

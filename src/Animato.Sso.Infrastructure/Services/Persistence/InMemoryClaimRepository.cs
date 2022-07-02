@@ -337,4 +337,11 @@ public class InMemoryClaimRepository : IClaimRepository
             throw;
         }
     }
+
+    public Task Clear(CancellationToken cancellationToken)
+    {
+        claimScopes.Clear();
+        claims.Clear();
+        return Task.CompletedTask;
+    }
 }

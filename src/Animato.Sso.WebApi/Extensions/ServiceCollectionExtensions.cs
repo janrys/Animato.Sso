@@ -211,6 +211,14 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddCustomHealtChecks(this IServiceCollection services)
     {
         services.AddHealthChecks();
+        services.AddHealthChecksUI(setupSettings: setup =>
+        {
+            setup.SetHeaderText("Animato SSO Healthcheck");
+            setup.SetEvaluationTimeInSeconds(30);
+            setup.MaximumHistoryEntriesPerEndpoint(50);
+            setup.AddHealthCheckEndpoint("SSO", "/api/health");
+        })
+            .AddInMemoryStorage();
         return services;
     }
 

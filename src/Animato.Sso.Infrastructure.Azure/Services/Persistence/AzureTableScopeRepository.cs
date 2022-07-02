@@ -215,4 +215,19 @@ public class AzureTableScopeRepository : IScopeRepository
             throw;
         }
     }
+
+    public async Task Clear(CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            await AzureTableStorageDataContext.DeleteAllEntitiesAsync(TableScopes, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesDeletingError(exception);
+            throw;
+        }
+    }
 }

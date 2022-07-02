@@ -24,4 +24,5 @@ public interface IClaimRepository
     Task DeleteUserClaims(ClaimId id, CancellationToken cancellationToken);
     Task<ClaimScope> AddClaimScope(ClaimScope claimScope, CancellationToken cancellationToken);
     Task RemoveClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken);
+    Task Clear(CancellationToken cancellationToken);
 }

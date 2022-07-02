@@ -30,7 +30,6 @@ try
 
     app.UseCustomLogging();
     app.UseCustomProblemDetails();
-    app.UseHealthChecks("/api/health");
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
@@ -40,6 +39,7 @@ try
     };
     app.UseCookiePolicy(cookiePolicyOptions);
     app.MapControllers();
+    app.UseCustomHealthChecks();
 
     app.Run();
     return 0;

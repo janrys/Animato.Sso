@@ -152,5 +152,11 @@ public class InMemoryScopeRepository : IScopeRepository
         }
     }
 
+    public Task Clear(CancellationToken cancellationToken)
+    {
+        scopes.Clear();
+        return Task.CompletedTask;
+    }
+
 
 }

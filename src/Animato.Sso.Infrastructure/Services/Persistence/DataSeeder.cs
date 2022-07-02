@@ -129,6 +129,8 @@ public class DataSeeder : IDataSeeder
 
     private async Task Clear()
     {
+        await claimRepository.Clear(CancellationToken.None);
+        await scopeRepository.Clear(CancellationToken.None);
         await userRepository.ClearRoles(CancellationToken.None);
         await userRepository.Clear(CancellationToken.None);
         await applicationRoleRepository.Clear(CancellationToken.None);

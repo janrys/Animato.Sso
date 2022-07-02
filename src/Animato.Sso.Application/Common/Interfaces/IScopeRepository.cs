@@ -16,4 +16,5 @@ public interface IScopeRepository
     Task<IEnumerable<Scope>> GetScopesById(CancellationToken cancellationToken, params ScopeId[] ids);
     Task Delete(string name, CancellationToken cancellationToken);
     Task<Scope> Update(string oldName, string newName, CancellationToken cancellationToken);
+    Task Clear(CancellationToken cancellationToken);
 }

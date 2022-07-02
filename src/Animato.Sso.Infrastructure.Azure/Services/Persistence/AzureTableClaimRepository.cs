@@ -370,10 +370,27 @@ public class AzureTableClaimRepository : IClaimRepository
         }
     }
 
-    public Task<IEnumerable<Claim>> GetByName(CancellationToken cancellationToken, params string[] strings) => throw new NotImplementedException();
+    public async Task Clear(CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            await AzureTableStorageDataContext.DeleteAllEntitiesAsync(TableUserClaims, CancellationToken.None);
+            await AzureTableStorageDataContext.DeleteAllEntitiesAsync(TableClaimScopes, CancellationToken.None);
+            await AzureTableStorageDataContext.DeleteAllEntitiesAsync(TableClaims, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.ApplicationRolesDeletingError(exception);
+            throw;
+        }
+    }
+
+    public Task<IEnumerable<Claim>> GetByName(CancellationToken cancellationToken, params string[] names) => throw new NotImplementedException();
     public Task<IEnumerable<Claim>> GetByScope(string scopeName, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<IEnumerable<Claim>> GetByScope(ScopeId scopeId, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<ClaimScope> GetClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<ClaimScope> AddClaimScope(ClaimScope claimScope, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task RemoveClaimScope(ScopeId id1, ClaimId id2, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task RemoveClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken) => throw new NotImplementedException();
 }

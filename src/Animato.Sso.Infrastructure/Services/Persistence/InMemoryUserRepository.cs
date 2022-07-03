@@ -306,9 +306,91 @@ public class InMemoryUserRepository : IUserRepository
         }
     }
 
-    public Task<IEnumerable<UserClaim>> GetClaims(UserId id, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task RemoveUserClaim(UserClaimId userClaimId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task AddUserClaims(UserId id, CancellationToken cancellationToken, params UserClaim[] userClaims) => throw new NotImplementedException();
-    public Task<UserClaim> GetClaim(UserClaimId userClaimId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<UserClaim> UpdateUserClaim(UserClaim userClaim, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task<IEnumerable<UserClaim>> GetClaims(UserId id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(userClaims.Where(c => c.UserId == id));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+    public Task<UserClaim> GetClaim(UserClaimId userClaimId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Task.FromResult(userClaims.FirstOrDefault(c => c.Id == userClaimId));
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+    public Task RemoveUserClaim(UserClaimId userClaimId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            userClaims.RemoveAll(c => c.Id == userClaimId);
+            return Task.CompletedTask;
+
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsDeletingError(exception);
+            throw;
+        }
+    }
+
+    public Task AddUserClaims(UserId id, CancellationToken cancellationToken, params UserClaim[] userClaims)
+    {
+        if (userClaims is null || !userClaims.Any())
+        {
+            throw new ArgumentNullException(nameof(userClaims));
+        }
+
+        userClaims.ToList().ForEach(c => c.Id = UserClaimId.New());
+
+        try
+        {
+            this.userClaims.AddRange(userClaims);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsCreatingError(exception);
+            throw;
+        }
+
+    }
+
+    public async Task<UserClaim> UpdateUserClaim(UserClaim userClaim, CancellationToken cancellationToken)
+    {
+
+        var claim = await GetClaim(userClaim.Id, cancellationToken);
+
+        if (claim == null)
+        {
+            throw new NotFoundException(nameof(UserClaim), userClaim.Id.Value.ToString());
+        }
+
+        claim.Value = userClaim.Value;
+
+        try
+        {
+            userClaims.Remove(claim);
+            userClaims.Add(claim);
+            return claim;
+
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsUpdatingError(exception);
+            throw;
+        }
+    }
 }

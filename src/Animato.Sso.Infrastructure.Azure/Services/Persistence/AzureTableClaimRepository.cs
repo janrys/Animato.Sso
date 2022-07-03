@@ -275,6 +275,103 @@ public class AzureTableClaimRepository : IClaimRepository
         }
     }
 
+    public async Task<IEnumerable<Claim>> GetByName(CancellationToken cancellationToken, params string[] names)
+    {
+        if (names is null || !names.Any(n => !string.IsNullOrEmpty(n)))
+        {
+            return Enumerable.Empty<Claim>();
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            var results = new List<ClaimTableEntity>();
+            var filter = string.Join(" or ", names.Select(n => $"PartitionKey eq '{n}'"));
+            var queryResult = TableClaims.QueryAsync<ClaimTableEntity>(filter, cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            return results.Select(s => s.ToEntity());
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+    public async Task<IEnumerable<Claim>> GetByScope(string scopeName, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(scopeName))
+        {
+            throw new ArgumentException($"'{nameof(scopeName)}' cannot be null or empty.", nameof(scopeName));
+        }
+
+        var scope = await scopeRepository.GetScopeByName(scopeName, cancellationToken);
+
+        if (scope is null)
+        {
+            return Enumerable.Empty<Claim>();
+        }
+
+        return await GetByScopeInternal(scope.Id, null, cancellationToken);
+    }
+
+    public async Task<IEnumerable<Claim>> GetByScope(string scopeName, int topCount, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(scopeName))
+        {
+            throw new ArgumentException($"'{nameof(scopeName)}' cannot be null or empty.", nameof(scopeName));
+        }
+
+        if (topCount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(topCount), "Must be greater than 0");
+        }
+
+        var scope = await scopeRepository.GetScopeByName(scopeName, cancellationToken);
+
+        return await GetByScopeInternal(scope.Id, topCount, cancellationToken);
+    }
+
+    public Task<IEnumerable<Claim>> GetByScope(ScopeId scopeId, CancellationToken cancellationToken)
+     => GetByScopeInternal(scopeId, null, cancellationToken);
+
+    private async Task<IEnumerable<Claim>> GetByScopeInternal(ScopeId scopeId, int? topCount, CancellationToken cancellationToken)
+    {
+        if (topCount.HasValue && topCount.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(topCount), "Must be greater than 0");
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            var claimScopes = await GetClaimScopesByScope(scopeId, cancellationToken);
+
+            if (!claimScopes.Any())
+            {
+                return Enumerable.Empty<Claim>();
+            }
+
+            var claimIds = claimScopes.Select(c => c.ClaimId).Distinct();
+            if (topCount.HasValue)
+            {
+                claimIds = claimIds.Take(topCount.Value);
+            }
+
+            return await GetBydId(cancellationToken, claimIds.ToArray());
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
     public async Task<Claim> GetClaimByName(string name, CancellationToken cancellationToken)
     {
         await ThrowExceptionIfTableNotExists(cancellationToken);
@@ -307,46 +404,7 @@ public class AzureTableClaimRepository : IClaimRepository
         }
     }
 
-    public async Task<IEnumerable<Claim>> GetByScope(string scopeName, int topCount, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrEmpty(scopeName))
-        {
-            throw new ArgumentException($"'{nameof(scopeName)}' cannot be null or empty.", nameof(scopeName));
-        }
 
-        if (topCount <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(topCount), "Must be greater than 0");
-        }
-
-        await ThrowExceptionIfTableNotExists(cancellationToken);
-
-        try
-        {
-
-            var scope = await scopeRepository.GetScopeByName(scopeName, cancellationToken);
-
-            if (scope is null)
-            {
-                return Enumerable.Empty<Claim>();
-            }
-
-            var claimScopes = await GetClaimScopesByScope(scope.Id, cancellationToken);
-
-            if (!claimScopes.Any())
-            {
-                return Enumerable.Empty<Claim>();
-            }
-
-            var claimIds = claimScopes.Select(c => c.ClaimId).Distinct().Take(topCount);
-            return await GetBydId(cancellationToken, claimIds.ToArray());
-        }
-        catch (Exception exception)
-        {
-            logger.ClaimsLoadingError(exception);
-            throw;
-        }
-    }
 
     private async Task<IEnumerable<ClaimScope>> GetClaimScopesByScope(ScopeId id, CancellationToken cancellationToken)
     {
@@ -387,10 +445,81 @@ public class AzureTableClaimRepository : IClaimRepository
         }
     }
 
-    public Task<IEnumerable<Claim>> GetByName(CancellationToken cancellationToken, params string[] names) => throw new NotImplementedException();
-    public Task<IEnumerable<Claim>> GetByScope(string scopeName, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<IEnumerable<Claim>> GetByScope(ScopeId scopeId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<ClaimScope> GetClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<ClaimScope> AddClaimScope(ClaimScope claimScope, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task RemoveClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<ClaimScope> GetClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            var results = new List<ClaimScopeTableEntity>();
+            var queryResult = TableClaimScopes.QueryAsync<ClaimScopeTableEntity>(c => c.PartitionKey == scopeId.Value.ToString()
+             && c.RowKey == claimId.Value.ToString(), cancellationToken: cancellationToken);
+
+            await queryResult.AsPages()
+                .ForEachAsync(page => results.AddRange(page.Values), cancellationToken)
+                .ConfigureAwait(false);
+
+            return results.FirstOrDefault()?.ToEntity();
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+    public async Task<ClaimScope> AddClaimScope(ClaimScope claimScope, CancellationToken cancellationToken)
+    {
+        if (claimScope is null)
+        {
+            throw new ArgumentNullException(nameof(claimScope));
+        }
+
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            var storedClaimScope = await GetClaimScope(claimScope.ScopeId, claimScope.ClaimId, cancellationToken);
+
+            if (storedClaimScope is not null)
+            {
+                throw new ValidationException(
+                     ValidationException.CreateFailure("ClaimScope"
+                     , $"Cannot add new claim scopes, because already exists claim id {storedClaimScope.ClaimId.Value} and scope id {storedClaimScope.ScopeId.Value} ")
+                     );
+            }
+
+            await TableClaimScopes.AddEntityAsync(claimScope.ToTableEntity(), cancellationToken);
+
+            return claimScope;
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesCreatingError(exception);
+            throw;
+        }
+    }
+
+    public async Task RemoveClaimScope(ScopeId scopeId, ClaimId claimId, CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            var storedClaimScope = await GetClaimScope(scopeId, claimId, cancellationToken);
+
+            if (storedClaimScope is not null)
+            {
+                return;
+            }
+
+            var tableEntity = storedClaimScope.ToTableEntity();
+            await TableClaimScopes.DeleteEntityAsync(tableEntity.PartitionKey, tableEntity.RowKey, cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.ScopesCreatingError(exception);
+            throw;
+        }
+    }
 }

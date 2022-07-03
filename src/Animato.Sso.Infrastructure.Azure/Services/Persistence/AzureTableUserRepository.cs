@@ -370,6 +370,8 @@ public class AzureTableUserRepository : IUserRepository
             throw new ArgumentOutOfRangeException(nameof(topCount), topCount, "Must be greater than 0");
         }
 
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
         try
         {
             var results = new List<UserClaimTableEntity>();
@@ -394,9 +396,126 @@ public class AzureTableUserRepository : IUserRepository
         }
     }
 
-    public Task<IEnumerable<UserClaim>> GetClaims(UserId id, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task RemoveUserClaim(UserClaimId userClaimId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task AddUserClaims(UserId id, CancellationToken cancellationToken, params UserClaim[] userClaims) => throw new NotImplementedException();
-    public Task<UserClaim> GetClaim(UserClaimId userClaimId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<UserClaim> UpdateUserClaim(UserClaim userClaim, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<IEnumerable<UserClaim>> GetClaims(UserId id, CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            var results = new List<UserClaimTableEntity>();
+            var queryResult = TableUsers.QueryAsync<UserClaimTableEntity>(a => a.PartitionKey == id.Value.ToString(), cancellationToken: cancellationToken);
+
+            await foreach (var page in queryResult.AsPages())
+            {
+                results.AddRange(page.Values);
+            }
+
+            return results.Select(c => c.ToEntity());
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+    public async Task<UserClaim> GetClaim(UserClaimId userClaimId, CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            var results = new List<UserClaimTableEntity>();
+            var queryResult = TableUserClaims.QueryAsync<UserClaimTableEntity>(a => a.RowKey == userClaimId.Value.ToString(), cancellationToken: cancellationToken);
+
+            await foreach (var page in queryResult.AsPages())
+            {
+                results.AddRange(page.Values);
+            }
+
+            return results.FirstOrDefault()?.ToEntity();
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsLoadingError(exception);
+            throw;
+        }
+    }
+
+    public async Task RemoveUserClaim(UserClaimId userClaimId, CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        var claim = await GetClaim(userClaimId, cancellationToken);
+
+        if (claim == null)
+        {
+            return;
+        }
+
+        var tableEntity = claim.ToTableEntity();
+
+        try
+        {
+            await TableUserClaims.DeleteEntityAsync(tableEntity.PartitionKey, tableEntity.RowKey, cancellationToken: cancellationToken);
+
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsDeletingError(exception);
+            throw;
+        }
+    }
+
+    public async Task AddUserClaims(UserId id, CancellationToken cancellationToken, params UserClaim[] userClaims)
+    {
+        if (userClaims is null || !userClaims.Any())
+        {
+            throw new ArgumentNullException(nameof(userClaims));
+        }
+
+        userClaims.ToList().ForEach(c => c.Id = UserClaimId.New());
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        try
+        {
+            await AzureTableStorageDataContext.BatchManipulateEntities(TableUserClaims
+                , userClaims.Select(c => c.ToTableEntity())
+                , TableTransactionActionType.Add
+                , cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsCreatingError(exception);
+            throw;
+        }
+
+    }
+
+    public async Task<UserClaim> UpdateUserClaim(UserClaim userClaim, CancellationToken cancellationToken)
+    {
+        await ThrowExceptionIfTableNotExists(cancellationToken);
+
+        var claim = await GetClaim(userClaim.Id, cancellationToken);
+
+        if (claim == null)
+        {
+            throw new NotFoundException(nameof(UserClaim), userClaim.Id.Value.ToString());
+        }
+
+        claim.Value = userClaim.Value;
+        var tableEntity = claim.ToTableEntity();
+
+        try
+        {
+            await TableUserClaims.UpdateEntityAsync(tableEntity, Azure.ETag.All, cancellationToken: cancellationToken);
+            return claim;
+
+        }
+        catch (Exception exception)
+        {
+            logger.ClaimsUpdatingError(exception);
+            throw;
+        }
+    }
 }

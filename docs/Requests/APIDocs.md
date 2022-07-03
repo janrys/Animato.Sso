@@ -1,10 +1,10 @@
-﻿# Animato SSO
+# Animato SSO
 
 baseUrl = 
 
 DEV: https://animato-sso-dev-api.azurewebsites.net/
 
-TEST: ...
+TEST: https://animato-sso-test-api.azurewebsites.net/
 
 PROD: ...
 

@@ -341,8 +341,29 @@ public class OidcController : ApiControllerBase
     /// <param name="tokenRequest"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Token response</returns>
-    [HttpPost("token", Name = "Token")]
-    public async Task<IActionResult> Token([FromBody] TokenRequest tokenRequest, CancellationToken cancellationToken)
+    [HttpPost("tokenjson", Name = "Token")]
+    [Consumes("application/json")]
+    public Task<IActionResult> TokenJson([FromBody] TokenRequest tokenRequest, CancellationToken cancellationToken)
+        => TokenInternal(tokenRequest, cancellationToken);
+
+    /// <summary>
+    /// Token endpoint
+    /// </summary>
+    /// <param name="tokenRequest"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>Token response</returns>
+    [HttpPost("token", Name = "TokenForm")]
+    [Consumes("application/x-www-form-urlencoded")]
+    public Task<IActionResult> TokenForm([FromForm] TokenRequest tokenRequest, CancellationToken cancellationToken)
+        => TokenInternal(tokenRequest, cancellationToken);
+
+    /// <summary>
+    /// Token endpoint
+    /// </summary>
+    /// <param name="tokenRequest"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>Token response</returns>
+    private async Task<IActionResult> TokenInternal(TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
         logger.LogDebug("Executing action {Action}", nameof(Token));
 
@@ -429,6 +450,7 @@ public class OidcController : ApiControllerBase
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns></returns>
     [HttpPost("token-info", Name = "TokenInfo")]
+    [HttpPost("tokeninfo", Name = "TokenInfo2")]
     public async Task<IActionResult> TokenInfo([FromBody] RevokeRequest tokenInfoRequest, CancellationToken cancellationToken)
     {
         logger.LogDebug("Executing action {Action}", nameof(TokenInfo));
@@ -449,12 +471,43 @@ public class OidcController : ApiControllerBase
     }
 
     /// <summary>
+    /// Get information about authenticated user
+    /// </summary>
+    /// <param name="accessToken">Access token could be in query parameter or in authorization header</param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns></returns>
+    [HttpPost("userinfo", Name = "UserInfoPost")]
+    [HttpGet("userinfo", Name = "UserInfo")]
+    public async Task<IActionResult> UserInfo([FromQuery(Name = "authorization")] string accessToken, CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(TokenInfo));
+
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            accessToken = Request.Headers.Authorization.FirstOrDefault()?.Replace("bearer ", "", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            return BadRequest($"{nameof(accessToken)} must have a value");
+        }
+
+        accessToken = accessToken.Replace("bearer ", "", StringComparison.OrdinalIgnoreCase);
+
+        var userInfo = await this.Query(cancellationToken).User.GetUserInfo(accessToken);
+
+        return Ok(userInfo);
+    }
+
+    /// <summary>
     /// Logout user and invalidate all tokens
     /// </summary>
     /// <param name="cancellationToken">Cancelation token</param>
+    /// <param name="redirectUri">Optional redirect URI after logout</param>
     /// <returns></returns>
-    [HttpPost("logout", Name = "Logout")]
-    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+    [HttpPost("logout", Name = "LogoutPost")]
+    [HttpGet("logout", Name = "LogoutGet")]
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken, [FromQuery(Name = "redirect_uri")] string redirectUri = null)
     {
         logger.LogDebug("Executing action {Action}", nameof(Logout));
 
@@ -462,7 +515,22 @@ public class OidcController : ApiControllerBase
         {
             await this.CommandForCurrentUser(cancellationToken).Token.RevokeAllTokens();
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Ok();
+
+            if (string.IsNullOrEmpty(redirectUri))
+            {
+                return Ok();
+            }
+            else
+            {
+                if (Flurl.Url.IsValid(redirectUri))
+                {
+                    return Redirect(redirectUri);
+                }
+                else
+                {
+                    return BadRequest($"Wrong redirect uri {redirectUri}");
+                }
+            }
         }
 
         return LocalRedirect(Url.GetLocalUrl(Request.Query["from"].ToString() ?? "/login"));
@@ -497,6 +565,7 @@ public class OidcController : ApiControllerBase
             AuthorizationEndpoint = linkGenerator.GetUriByAction(HttpContext, "Authorize"),
             TokenEndpoint = linkGenerator.GetUriByAction(HttpContext, "Token"),
             RevocationEndpoint = linkGenerator.GetUriByAction(HttpContext, "Revoke"),
+            UserInfoEndpoint = linkGenerator.GetUriByAction(HttpContext, "UserInfo"),
             ResponseTypesSupported = new List<string>(new string[] { "code", "token" }),
             MinimalPasswordLength = oidcOptions.MinimalPasswordLength,
             ScopesSupported = scopes.Select(s => s.Name).ToList(),

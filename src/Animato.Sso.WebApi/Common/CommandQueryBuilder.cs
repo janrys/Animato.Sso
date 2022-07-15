@@ -162,6 +162,8 @@ public class CommandQueryBuilder :
     => mediator.Send(new DeleteClaimCommand(name, user), cancellationToken);
     Task<IEnumerable<UserClaim>> IUserQueryBuilder.GetClaims(UserId userId)
         => mediator.Send(new GetUserClaimsQuery(userId, user), cancellationToken);
+    Task<UserInfoResult> IUserQueryBuilder.GetUserInfo(string accessToken)
+        => mediator.Send(new GetUserInfoQuery(accessToken, user), cancellationToken);
     Task<IEnumerable<UserClaim>> IUserCommandBuilder.RemoveClaim(UserId userId, UserClaimId userClaimId)
         => mediator.Send(new RemoveUserClaimCommand(userId, userClaimId, user), cancellationToken);
     Task<IEnumerable<UserClaim>> IUserCommandBuilder.AddClaims(UserId userId, AddUserClaimsModel claims)
@@ -174,4 +176,5 @@ public class CommandQueryBuilder :
         => mediator.Send(new AddClaimScopeCommand(scopeName, claimName, user), cancellationToken);
     Task<IEnumerable<Domain.Entities.Claim>> IScopeCommandBuilder.RemoveClaim(string scopeName, string claimName)
         => mediator.Send(new RemoveClaimScopeCommand(scopeName, claimName, user), cancellationToken);
+
 }

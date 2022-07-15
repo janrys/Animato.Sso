@@ -183,7 +183,7 @@ Invalid token
 Use long life refresh token to get new access token after it's expiration without need to new user login.
 
 ```js
-POST {{baseUrl}}/token-info
+POST {{baseUrl}}/token
 
 {
   "grant_type": "refresh_token",

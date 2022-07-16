@@ -61,7 +61,6 @@ public static class ServiceCollectionExtensions
                     .MinimumLevel.Is(logLevel)
                     .Enrich.FromLogContext()
                     .Enrich.WithExceptionDetails()
-                    .Enrich.WithCorrelationIdHeader(globalOptions.CorrelationHeaderName)
                     .Enrich.WithMachineName()
                     .WriteTo.Async(a => a.Console());
 

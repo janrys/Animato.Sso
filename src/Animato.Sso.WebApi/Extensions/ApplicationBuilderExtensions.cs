@@ -1,5 +1,6 @@
 namespace Animato.Sso.WebApi.Extensions;
 
+using Animato.Sso.Application.Common;
 using HealthChecks.UI.Client;
 using Hellang.Middleware.ProblemDetails;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -21,14 +22,21 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static IApplicationBuilder UseCustomLogging(this IApplicationBuilder app)
+    public static IApplicationBuilder UseCustomLogging(this IApplicationBuilder app, IConfiguration configuration)
     {
+        var globalOptions = new GlobalOptions();
+        configuration.Bind(GlobalOptions.ConfigurationKey, globalOptions);
+
         app.UseSerilogRequestLogging(options =>
+        {
             options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-            {
-                diagnosticContext.Set("RequestUrl", httpContext.Request.GetDisplayUrl());
-                diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress);
-            });
+                {
+                    diagnosticContext.Set("RequestUrl", httpContext.Request.GetDisplayUrl());
+                    diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress);
+                    diagnosticContext.Set("CorrelationId", httpContext.TraceIdentifier);
+                };
+            options.MessageTemplate += ", url {RequestUrl}, client ip {ClientIp}, correlation id {CorrelationId}";
+        });
         return app;
     }
 

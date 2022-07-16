@@ -12,9 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 public class ClaimController : ApiControllerBase
 {
-    private readonly ILogger<ClaimController> logger;
-
-    public ClaimController(ISender mediator, ILogger<ClaimController> logger) : base(mediator) => this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    public ClaimController(ISender mediator) : base(mediator) { }
 
     /// <summary>
     /// Get all claims
@@ -25,8 +23,6 @@ public class ClaimController : ApiControllerBase
     [HttpGet(Name = "GetClaims")]
     public async Task<IActionResult> GetAll([FromQuery] string name, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetAll));
-
         var claims = new List<Claim>();
         if (!string.IsNullOrEmpty(name))
         {
@@ -48,8 +44,6 @@ public class ClaimController : ApiControllerBase
     [HttpPost(Name = "CreateClaim")]
     public async Task<IActionResult> CreateClaim([FromBody] CreateClaimModel claim, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(CreateClaim));
-
         if (claim is null || string.IsNullOrEmpty(claim.Name))
         {
             return BadRequest($"{nameof(claim)} and {nameof(claim.Name)} must have a value");
@@ -69,8 +63,6 @@ public class ClaimController : ApiControllerBase
     [HttpPut("{name}", Name = "UpdateClaim")]
     public async Task<IActionResult> UpdateClaim(string name, [FromBody] CreateClaimModel claim, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(UpdateClaim));
-
         if (string.IsNullOrEmpty(name))
         {
             return BadRequest($"{nameof(name)} must have a value");
@@ -94,8 +86,6 @@ public class ClaimController : ApiControllerBase
     [HttpDelete("{name}", Name = "DeleteClaim")]
     public async Task<IActionResult> DeleteClaim(string name, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(DeleteClaim));
-
         if (string.IsNullOrEmpty(name))
         {
             return BadRequest($"{nameof(name)} must have a value");

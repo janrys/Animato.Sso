@@ -9,9 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 [ProducesResponseType(StatusCodes.Status500InternalServerError)]
 public class ApplicationController : ApiControllerBase
 {
-    private readonly ILogger<ApplicationController> logger;
-
-    public ApplicationController(ISender mediator, ILogger<ApplicationController> logger) : base(mediator) => this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    public ApplicationController(ISender mediator) : base(mediator) { }
 
     /// <summary>
     /// Get all applications
@@ -23,8 +21,6 @@ public class ApplicationController : ApiControllerBase
     [HttpGet(Name = "GetApplications")]
     public async Task<IActionResult> GetAll([FromQuery] string clientId, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetAll));
-
         if (!string.IsNullOrEmpty(clientId))
         {
             return await GetByCode(clientId, cancellationToken);
@@ -44,8 +40,6 @@ public class ApplicationController : ApiControllerBase
     [HttpGet("{id}", Name = "GetApplicationById")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetById));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -72,8 +66,6 @@ public class ApplicationController : ApiControllerBase
 
     private async Task<IActionResult> GetByCode([FromQuery] string clientId, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetByCode));
-
         if (string.IsNullOrEmpty(clientId))
         {
             return BadRequest($"{nameof(clientId)} must have a value");
@@ -99,8 +91,6 @@ public class ApplicationController : ApiControllerBase
     [HttpPost(Name = "CreateApplication")]
     public async Task<IActionResult> CreateApplication([FromBody] CreateApplicationModel application, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(CreateApplication));
-
         if (application is null)
         {
             return BadRequest($"{nameof(application)} must have a value");
@@ -121,8 +111,6 @@ public class ApplicationController : ApiControllerBase
     [HttpPut("{id}", Name = "UpdateApplication")]
     public async Task<IActionResult> UpdateApplication(string id, [FromBody] CreateApplicationModel application, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(UpdateApplication));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -157,8 +145,6 @@ public class ApplicationController : ApiControllerBase
     [HttpDelete("{id}", Name = "DeleteApplication")]
     public async Task<IActionResult> DeleteApplication(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(DeleteApplication));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -188,8 +174,6 @@ public class ApplicationController : ApiControllerBase
     [HttpGet("{id}/role", Name = "GetAllApplicationRoles")]
     public async Task<IActionResult> GetAllApplicationRoles(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetAllApplicationRoles));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -219,8 +203,6 @@ public class ApplicationController : ApiControllerBase
     [HttpGet("role/{id}", Name = "GetRoleById")]
     public async Task<IActionResult> GetRoleById(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetRoleById));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -256,8 +238,6 @@ public class ApplicationController : ApiControllerBase
     [HttpPost("{id}/role", Name = "CreateApplicationRoles")]
     public async Task<IActionResult> CreateApplicationRoles(string id, [FromBody] CreateApplicationRolesModel roles, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(CreateApplicationRoles));
-
         if (roles is null)
         {
             return BadRequest($"{nameof(roles)} must have a value");
@@ -298,8 +278,6 @@ public class ApplicationController : ApiControllerBase
     [HttpPut("role/{id}", Name = "UpdateApplicationRole")]
     public async Task<IActionResult> UpdateApplicationRole(string id, [FromBody] CreateApplicationRoleModel role, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(UpdateApplicationRole));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -334,8 +312,6 @@ public class ApplicationController : ApiControllerBase
     [HttpDelete("role/{id}", Name = "DeleteApplicationRole")]
     public async Task<IActionResult> DeleteApplicationRole(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(DeleteApplication));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -365,8 +341,6 @@ public class ApplicationController : ApiControllerBase
     [HttpGet("{id}/scope", Name = "GetAllApplicationScopes")]
     public async Task<IActionResult> GetAllApplicationScopes(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetAllApplicationScopes));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -397,8 +371,6 @@ public class ApplicationController : ApiControllerBase
     [HttpPost("{id}/scope", Name = "AddApplicationScopes")]
     public async Task<IActionResult> AddApplicationScopes(string id, [FromBody] CreateScopesModel scopes, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(AddApplicationScopes));
-
         if (scopes is null || scopes.Names is null
             || !scopes.Names.Any()
             || !scopes.Names.Any(n => !string.IsNullOrEmpty(n)))
@@ -437,8 +409,6 @@ public class ApplicationController : ApiControllerBase
     [HttpDelete("{id}/scope", Name = "RemoveApplicationScopes")]
     public async Task<IActionResult> RemoveApplicationScopes(string id, [FromBody] CreateScopesModel scopes, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(RemoveApplicationScopes));
-
         if (scopes is null || scopes.Names is null
             || !scopes.Names.Any()
             || !scopes.Names.Any(n => !string.IsNullOrEmpty(n)))

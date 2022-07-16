@@ -9,9 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 public class UserController : ApiControllerBase
 {
-    private readonly ILogger<UserController> logger;
-
-    public UserController(ISender mediator, ILogger<UserController> logger) : base(mediator) => this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    public UserController(ISender mediator) : base(mediator) { }
 
     /// <summary>
     /// Get all users
@@ -23,8 +21,6 @@ public class UserController : ApiControllerBase
     [HttpGet(Name = "GetUsers")]
     public async Task<IActionResult> GetAll([FromQuery] string login, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetAll));
-
         if (!string.IsNullOrEmpty(login))
         {
             return await GetByLogin(login, cancellationToken);
@@ -44,8 +40,6 @@ public class UserController : ApiControllerBase
     [HttpGet("{id}", Name = "GetUserById")]
     public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetById));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -73,8 +67,6 @@ public class UserController : ApiControllerBase
 
     private async Task<IActionResult> GetByLogin([FromQuery] string login, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(login));
-
         if (string.IsNullOrEmpty(login))
         {
             return BadRequest($"{nameof(login)} must have a value");
@@ -100,8 +92,6 @@ public class UserController : ApiControllerBase
     [HttpPost(Name = "CreateUser")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserModel user, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(CreateUser));
-
         if (user is null)
         {
             return BadRequest($"{nameof(user)} must have a value");
@@ -122,8 +112,6 @@ public class UserController : ApiControllerBase
     [HttpPut("{id}", Name = "UpdateUser")]
     public async Task<IActionResult> UpdateUser(string id, [FromBody] CreateUserModel user, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(UpdateUser));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -158,8 +146,6 @@ public class UserController : ApiControllerBase
     [HttpDelete("{id}", Name = "DeleteUser")]
     public async Task<IActionResult> DeleteUser(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(DeleteUser));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -189,8 +175,6 @@ public class UserController : ApiControllerBase
     [HttpPost("{id}/role", Name = "AssignUserRoles")]
     public async Task<IActionResult> AssignUserRoles(string id, [FromBody] AddUserRolesModel roles, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(AssignUserRoles));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -240,8 +224,6 @@ public class UserController : ApiControllerBase
     [HttpPost("{id}/role/{roleId}", Name = "AssignUserRole")]
     public async Task<IActionResult> AssignUserRole(string id, string roleId, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(AssignUserRole));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -285,8 +267,6 @@ public class UserController : ApiControllerBase
     [HttpGet("{id}/role", Name = "GetUserRoles")]
     public async Task<IActionResult> GetUserRoles(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetUserRoles));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -316,8 +296,6 @@ public class UserController : ApiControllerBase
     [HttpDelete("{id}/role/{roleId}", Name = "UnassignUserRole")]
     public async Task<IActionResult> UnassignUserRole(string id, string roleId, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(UnassignUserRole));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -362,8 +340,6 @@ public class UserController : ApiControllerBase
     [HttpPost("{id}/claim", Name = nameof(AddUserClaims))]
     public async Task<IActionResult> AddUserClaims(string id, [FromBody] AddUserClaimsModel claims, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(AddUserClaims));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -397,8 +373,6 @@ public class UserController : ApiControllerBase
     [HttpGet("{id}/claim", Name = nameof(GetUserClaims))]
     public async Task<IActionResult> GetUserClaims(string id, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetUserClaims));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -429,8 +403,6 @@ public class UserController : ApiControllerBase
     [HttpPut("{id}/claim/{userClaimId}", Name = nameof(UpdateUserClaim))]
     public async Task<IActionResult> UpdateUserClaim(string id, string userClaimId, [FromBody] UpdateUserClaimModel claim, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(UpdateUserClaim));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");
@@ -480,8 +452,6 @@ public class UserController : ApiControllerBase
     [HttpDelete("{id}/claim/{userClaimId}", Name = nameof(RemoveUserClaim))]
     public async Task<IActionResult> RemoveUserClaim(string id, string userClaimId, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(RemoveUserClaim));
-
         if (string.IsNullOrEmpty(id))
         {
             return BadRequest($"{nameof(id)} must have a value");

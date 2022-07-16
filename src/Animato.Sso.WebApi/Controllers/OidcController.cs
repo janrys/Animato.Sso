@@ -18,13 +18,8 @@ using Microsoft.AspNetCore.Mvc;
 public class OidcController : ApiControllerBase
 {
     private readonly IDateTimeService dateTime;
-    private readonly ILogger<OidcController> logger;
 
-    public OidcController(ISender mediator, IDateTimeService dateTime, ILogger<OidcController> logger) : base(mediator)
-    {
-        this.dateTime = dateTime;
-        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    public OidcController(ISender mediator, IDateTimeService dateTime) : base(mediator) => this.dateTime = dateTime;
 
 
     /// <summary>
@@ -111,13 +106,11 @@ public class OidcController : ApiControllerBase
     /// <summary>
     /// Interactive user login
     /// </summary>
-    /// <param name="authenticator"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns></returns>
     [HttpGet("login", Name = "Login")]
-    public async Task<IActionResult> Login([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
+    public async Task<IActionResult> Login(CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(Login));
         var fileContents = await System.IO.File.ReadAllTextAsync("./Content/Authorize.html", cancellationToken);
         string userName;
 
@@ -191,8 +184,6 @@ public class OidcController : ApiControllerBase
     [HttpPost("authorize/interactive", Name = "AuthorizeInteractive")]
     public async Task<IActionResult> AuthorizeInteractive([FromForm] LoginModel loginModel, [FromServices] IQrCodeTotpAuthenticator authenticator, [FromServices] IClaimFactory claimFactory, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(AuthorizeInteractive));
-
         User user = null;
         var authorizationMethod = AuthorizationMethod.Unknown;
 
@@ -273,8 +264,6 @@ public class OidcController : ApiControllerBase
     [HttpGet("login/me", Name = "AboutMe")]
     public async Task<IActionResult> AboutMe([FromServices] IQrCodeTotpAuthenticator authenticator, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(Login));
-
         if (!User.Identity.IsAuthenticated)
         {
             return RedirectToLoginWithBackRedirect();
@@ -365,8 +354,6 @@ public class OidcController : ApiControllerBase
     /// <returns>Token response</returns>
     private async Task<IActionResult> TokenInternal(TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(Token));
-
         if (tokenRequest is null)
         {
             return BadRequest($"{nameof(tokenRequest)} must have a value");
@@ -426,8 +413,6 @@ public class OidcController : ApiControllerBase
     [HttpPost("revoke", Name = "Revoke")]
     public async Task<IActionResult> Revoke([FromBody] RevokeRequest revokeRequest, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(Revoke));
-
         if (revokeRequest is null)
         {
             return BadRequest($"{nameof(revokeRequest)} must have a value");
@@ -453,8 +438,6 @@ public class OidcController : ApiControllerBase
     [HttpPost("tokeninfo", Name = "TokenInfo2")]
     public async Task<IActionResult> TokenInfo([FromBody] RevokeRequest tokenInfoRequest, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(TokenInfo));
-
         if (tokenInfoRequest is null)
         {
             return BadRequest($"{nameof(tokenInfoRequest)} must have a value");
@@ -480,8 +463,6 @@ public class OidcController : ApiControllerBase
     [HttpGet("userinfo", Name = "UserInfo")]
     public async Task<IActionResult> UserInfo([FromQuery(Name = "authorization")] string accessToken, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(TokenInfo));
-
         if (string.IsNullOrEmpty(accessToken))
         {
             accessToken = Request.Headers.Authorization.FirstOrDefault()?.Replace("bearer ", "", StringComparison.OrdinalIgnoreCase);
@@ -509,8 +490,6 @@ public class OidcController : ApiControllerBase
     [HttpGet("logout", Name = "LogoutGet")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken, [FromQuery(Name = "redirect_uri")] string redirectUri = null)
     {
-        logger.LogDebug("Executing action {Action}", nameof(Logout));
-
         if (User.Identity.IsAuthenticated)
         {
             await this.CommandForCurrentUser(cancellationToken).Token.RevokeAllTokens();
@@ -553,8 +532,6 @@ public class OidcController : ApiControllerBase
         , [FromServices] GlobalOptions globalOptions
         , CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(Metadata));
-
         var scopes = await this.Query(cancellationToken).Scope.GetAll();
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -580,18 +557,14 @@ public class OidcController : ApiControllerBase
     /// <summary>
     /// Get json web key set metadata
     /// </summary>
-    /// <param name="metadataService"></param>
     /// <param name="certificateManager"></param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns>Json web key set metadata</returns>
     [HttpGet("/.well-known/oauth-jwks", Name = "MetadataJwks")]
     [HttpGet("/.well-known/openid-jwks", Name = "MetadataJwksOidc")]
-    public async Task<IActionResult> JsonWebKeySetMetadata([FromServices] IMetadataService metadataService
-        , [FromServices] ICertificateManager certificateManager
+    public async Task<IActionResult> JsonWebKeySetMetadata([FromServices] ICertificateManager certificateManager
         , CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(JsonWebKeySetMetadata));
-
         cancellationToken.ThrowIfCancellationRequested();
         await Task.CompletedTask;
         var metadata = new JsonWebKeySetMetadata();

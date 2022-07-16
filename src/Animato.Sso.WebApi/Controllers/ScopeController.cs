@@ -11,9 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 public class ScopeController : ApiControllerBase
 {
-    private readonly ILogger<ScopeController> logger;
-
-    public ScopeController(ISender mediator, ILogger<ScopeController> logger) : base(mediator) => this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    public ScopeController(ISender mediator) : base(mediator) { }
 
     /// <summary>
     /// Get all scopes
@@ -24,8 +22,6 @@ public class ScopeController : ApiControllerBase
     [HttpGet(Name = "GetScopes")]
     public async Task<IActionResult> GetAll([FromQuery] string name, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetAll));
-
         var scopes = new List<Scope>();
         if (!string.IsNullOrEmpty(name))
         {
@@ -47,8 +43,6 @@ public class ScopeController : ApiControllerBase
     [HttpPost(Name = "CreateScopes")]
     public async Task<IActionResult> CreateScopes([FromBody] CreateScopesModel scopes, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(CreateScopes));
-
         if (scopes is null || scopes.Names is null
             || !scopes.Names.Any()
             || !scopes.Names.Any(n => !string.IsNullOrEmpty(n)))
@@ -70,8 +64,6 @@ public class ScopeController : ApiControllerBase
     [HttpPut("{name}/{new-name}", Name = "UpdateScope")]
     public async Task<IActionResult> UpdateScope(string name, [FromRoute(Name = "new-name")] string newName, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(UpdateScope));
-
         if (string.IsNullOrEmpty(name))
         {
             return BadRequest($"{nameof(name)} must have a value");
@@ -95,8 +87,6 @@ public class ScopeController : ApiControllerBase
     [HttpDelete("{name}", Name = "DeleteScope")]
     public async Task<IActionResult> DeleteScope(string name, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(DeleteScope));
-
         if (string.IsNullOrEmpty(name))
         {
             return BadRequest($"{nameof(name)} must have a value");
@@ -115,8 +105,6 @@ public class ScopeController : ApiControllerBase
     [HttpGet("{name}/scope", Name = "GetScopeClaims")]
     public async Task<IActionResult> GetScopeClaims(string name, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(GetScopeClaims));
-
         if (string.IsNullOrEmpty(name))
         {
             return BadRequest($"{nameof(name)} must have a value");
@@ -135,8 +123,6 @@ public class ScopeController : ApiControllerBase
     [HttpPost("{name}/scope/{claim-name}", Name = nameof(AddScopeClaim))]
     public async Task<IActionResult> AddScopeClaim(string name, [FromRoute(Name = "claim-name")] string claimName, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(AddScopeClaim));
-
         if (string.IsNullOrEmpty(name))
         {
             return BadRequest($"{nameof(name)} must have a value");
@@ -161,8 +147,6 @@ public class ScopeController : ApiControllerBase
     [HttpDelete("{name}/scope/{claim-name}", Name = nameof(DeleteScopeClaim))]
     public async Task<IActionResult> DeleteScopeClaim(string name, [FromRoute(Name = "claim-name")] string claimName, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Executing action {Action}", nameof(DeleteScopeClaim));
-
         if (string.IsNullOrEmpty(name))
         {
             return BadRequest($"{nameof(name)} must have a value");

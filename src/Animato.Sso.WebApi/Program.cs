@@ -2,6 +2,7 @@ using Animato.Sso.Application;
 using Animato.Sso.Infrastructure;
 using Animato.Sso.Infrastructure.AzureStorage;
 using Animato.Sso.WebApi.Extensions;
+using Animato.Sso.WebApi.Middlewares;
 using Serilog;
 
 Log.Logger = Animato.Sso.WebApi.Extensions.ServiceCollectionExtensions.CreateBootstrapLogger();
@@ -28,7 +29,8 @@ try
         app.UseDeveloperExceptionPage();
     }
 
-    app.UseCustomLogging();
+    app.UseMiddleware<CorrelationIdMiddleware>();
+    app.UseCustomLogging(app.Configuration);
     app.UseCustomProblemDetails();
     app.UseHttpsRedirection();
     app.UseAuthentication();

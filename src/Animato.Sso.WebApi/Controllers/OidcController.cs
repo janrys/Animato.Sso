@@ -566,6 +566,7 @@ public class OidcController : ApiControllerBase
             TokenEndpoint = linkGenerator.GetUriByAction(HttpContext, "Token"),
             RevocationEndpoint = linkGenerator.GetUriByAction(HttpContext, "Revoke"),
             UserInfoEndpoint = linkGenerator.GetUriByAction(HttpContext, "UserInfo"),
+            JsonWebKeySetUri = linkGenerator.GetUriByAction(HttpContext, "JsonWebKeySetMetadata"),
             ResponseTypesSupported = new List<string>(new string[] { "code", "token" }),
             MinimalPasswordLength = oidcOptions.MinimalPasswordLength,
             ScopesSupported = scopes.Select(s => s.Name).ToList(),
@@ -573,6 +574,28 @@ public class OidcController : ApiControllerBase
             CorrelationHeaderName = globalOptions.CorrelationHeaderName
 
         };
+        return Ok(metadata);
+    }
+
+    /// <summary>
+    /// Get json web key set metadata
+    /// </summary>
+    /// <param name="metadataService"></param>
+    /// <param name="certificateManager"></param>
+    /// <param name="cancellationToken">Cancelation token</param>
+    /// <returns>Json web key set metadata</returns>
+    [HttpGet("/.well-known/oauth-jwks", Name = "MetadataJwks")]
+    [HttpGet("/.well-known/openid-jwks", Name = "MetadataJwksOidc")]
+    public async Task<IActionResult> JsonWebKeySetMetadata([FromServices] IMetadataService metadataService
+        , [FromServices] ICertificateManager certificateManager
+        , CancellationToken cancellationToken)
+    {
+        logger.LogDebug("Executing action {Action}", nameof(JsonWebKeySetMetadata));
+
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        var metadata = new JsonWebKeySetMetadata();
+        metadata.JsonWebKeys.Add(certificateManager.GetJsonWebKey());
         return Ok(metadata);
     }
 }

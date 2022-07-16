@@ -13,4 +13,5 @@ public class GlobalOptions
     public string CorrelationHeaderName { get; set; } = "x-correlation-id";
     public string HashAlgorithmType { get; set; } = "SHA256";
     public bool ClearAndSeedData { get; set; }
+    public string TokenSigningCertificatePath { get; set; }
 }

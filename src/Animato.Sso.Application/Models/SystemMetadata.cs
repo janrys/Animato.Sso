@@ -88,4 +88,24 @@ public class SystemMetadata
     [JsonProperty("authentication_code_expiration")]
     [JsonPropertyName("authentication_code_expiration")]
     public int AuthenticationCodeExpiration { get; set; }
+
+    [JsonProperty("jwks_uri")]
+    [JsonPropertyName("jwks_uri")]
+    public string JsonWebKeySetUri { get; set; }
+}
+
+
+public class JsonWebKeySetMetadata
+{
+    public List<JsonWebKey> JsonWebKeys { get; set; } = new List<JsonWebKey>();
+}
+
+public class JsonWebKey
+{
+    public string Kty { get; set; }
+    public string N { get; set; }
+    public string E { get; set; }
+    public string Alg { get; set; }
+    public string Kid { get; set; }
+    public string Use { get; set; }
 }

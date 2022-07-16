@@ -17,6 +17,7 @@ public class TokenFactory : ITokenFactory
 {
     private readonly OidcOptions oidcOptions;
     private readonly IClaimFactory claimFactory;
+    private readonly ICertificateManager certificateManager;
     private readonly IMetadataService metadataService;
     private readonly IDateTimeService dateTime;
     private static readonly char[] AlloweCharsForCode =
@@ -24,11 +25,13 @@ public class TokenFactory : ITokenFactory
 
     public TokenFactory(OidcOptions oidcOptions
         , IClaimFactory claimFactory
+        , ICertificateManager certificateManager
         , IMetadataService metadataService
         , IDateTimeService dateTime)
     {
         this.oidcOptions = oidcOptions ?? throw new ArgumentNullException(nameof(oidcOptions));
         this.claimFactory = claimFactory ?? throw new ArgumentNullException(nameof(claimFactory));
+        this.certificateManager = certificateManager ?? throw new ArgumentNullException(nameof(certificateManager));
         this.metadataService = metadataService ?? throw new ArgumentNullException(nameof(metadataService));
         this.dateTime = dateTime ?? throw new ArgumentNullException(nameof(dateTime));
     }
@@ -72,8 +75,10 @@ public class TokenFactory : ITokenFactory
             Audience = application.Code,
             Subject = new ClaimsIdentity(claims),
             Expires = dateTime.UtcNow.AddMinutes(application.AccessTokenExpirationMinutes),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            //SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            SigningCredentials = new SigningCredentials(certificateManager.GetTokenSigningKey(), certificateManager.GetTokenSigningAlghorithm()),
         };
+
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
@@ -97,7 +102,8 @@ public class TokenFactory : ITokenFactory
             Audience = application.Code,
             Subject = new ClaimsIdentity(claims),
             Expires = dateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+//            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            SigningCredentials = new SigningCredentials(certificateManager.GetTokenSigningKey(), certificateManager.GetTokenSigningAlghorithm()),
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);

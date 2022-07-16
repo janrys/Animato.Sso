@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordFactory, PasswordFactory>();
         services.AddSingleton<IClaimFactory, ClaimFactory>();
         services.AddSingleton<ITokenFactory, TokenFactory>();
+        services.AddSingleton<ICertificateManager, LocalFileCertificateManager>();
 
         return services;
     }

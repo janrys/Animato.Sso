@@ -512,7 +512,14 @@ public class OidcController : ApiControllerBase
             }
         }
 
-        return LocalRedirect(Url.GetLocalUrl(Request.Query["from"].ToString() ?? "/login"));
+        if (string.IsNullOrEmpty(redirectUri) || !Flurl.Url.IsValid(redirectUri))
+        {
+            return LocalRedirect(Url.GetLocalUrl(Request.Query["from"].ToString() ?? "/login"));
+        }
+        else
+        {
+            return Redirect(redirectUri);
+        }
     }
 
     /// <summary>

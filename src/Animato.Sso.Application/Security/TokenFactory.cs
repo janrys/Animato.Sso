@@ -102,7 +102,6 @@ public class TokenFactory : ITokenFactory
             Audience = application.Code,
             Subject = new ClaimsIdentity(claims),
             Expires = dateTime.UtcNow.AddMinutes(application.RefreshTokenExpirationMinutes),
-//            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
             SigningCredentials = new SigningCredentials(certificateManager.GetTokenSigningKey(), certificateManager.GetTokenSigningAlghorithm()),
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);

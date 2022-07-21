@@ -182,7 +182,9 @@ public static class ServiceCollectionExtensions
             {
                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
                 options.SlidingExpiration = true;
-                options.AccessDeniedPath = "/authorize/";
+                options.AccessDeniedPath = "/login/";
+                options.LogoutPath = "/logout/";
+                options.LogoutPath = "/login/";
             });
 
         services.Configure<RouteOptions>(options => options.LowercaseUrls = true);

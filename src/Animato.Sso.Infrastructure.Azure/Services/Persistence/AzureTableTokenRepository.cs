@@ -219,7 +219,7 @@ public class AzureTableTokenRepository : ITokenRepository
         {
             var storedTokens = new List<TokenTableEntity>();
             var queryResult = Table.QueryAsync<TokenTableEntity>(a => a.PartitionKey == id.ToString()
-                    && a.Revoked == null, cancellationToken: cancellationToken);
+                    && !(a.Revoked > DateTime.UtcNow || a.Revoked <= DateTime.UtcNow), cancellationToken: cancellationToken); // == null is throwinf exception in azure storage
 
             await queryResult.AsPages()
                 .ForEachAsync(page => storedTokens.AddRange(page.Values), cancellationToken)
